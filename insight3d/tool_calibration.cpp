@@ -257,7 +257,7 @@ bool calibration_pair(
 	ASSERT(points1->cols == points2->cols, "sizes of matrices containing correspondences do not match");
 
 	// compute F
-	CvMat * F = opencv_create_matrix(3, 3), * status = cvCreateMat(1, points1->cols, CV_8S);
+	CvMat * F = opencv_create_matrix(3, 3), * status = cvCreateMat(1, points1->cols, CV_8UC1);
 
 	if (!cvFindFundamentalMat(points1, points2, F, CV_FM_RANSAC, epipolar_distance_threshold, 0.999, status))
 	{
