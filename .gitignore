@@ -1,14 +1,8 @@
-<<<<<<< HEAD
-*.la
-*.lo
-*.o
-*.a
 *.exe
 *.dll
 *.orig
 insight3d
 eucsbademo
-=======
 # Compiled Object files
 *.slo
 *.lo
@@ -22,4 +16,3 @@ eucsbademo
 *.lai
 *.la
 *.a
->>>>>>> c2ec70947a8825f310b6a792f55353d5193345ca
