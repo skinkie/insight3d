@@ -1,18 +1,41 @@
 ﻿
+<<<<<<< HEAD
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "insight3d", "insight3d\insight3d.vcproj", "{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}"
+=======
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "insight3d", "insight3d\insight3d.vcxproj", "{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}"
+>>>>>>> c2ec70947a8825f310b6a792f55353d5193345ca
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+<<<<<<< HEAD
 		Release|Win32 = Release|Win32
+=======
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+>>>>>>> c2ec70947a8825f310b6a792f55353d5193345ca
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Debug|Win32.Build.0 = Debug|Win32
+<<<<<<< HEAD
 		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|Win32.ActiveCfg = Release|Win32
 		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|Win32.Build.0 = Release|Win32
+=======
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Debug|x64.ActiveCfg = Debug|x64
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Debug|x64.Build.0 = Debug|x64
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|Win32.ActiveCfg = Release|Win32
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|Win32.Build.0 = Release|Win32
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|x64.ActiveCfg = Release|x64
+		{518C700B-7DAC-4BE1-8CED-D5AA0FA0DAC0}.Release|x64.Build.0 = Release|x64
+>>>>>>> c2ec70947a8825f310b6a792f55353d5193345ca
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

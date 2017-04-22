@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.la
 *.lo
 *.o
@@ -7,3 +8,18 @@
 *.orig
 insight3d
 eucsbademo
+=======
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+>>>>>>> c2ec70947a8825f310b6a792f55353d5193345ca
