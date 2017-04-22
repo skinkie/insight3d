@@ -402,8 +402,8 @@ bool tool_selection_mouse_down(double x, double y, int button)
 
 	switch (button)
 	{
-		case SDL_BUTTON_WHEELUP:
-		{
+		case SDL_MOUSEWHEEL:
+		 if (y>=0) {
 			meta->view_zoom /= TOOL_SELECTION_ZOOM_RATE; 
 	
 			const double 
@@ -415,9 +415,9 @@ bool tool_selection_mouse_down(double x, double y, int button)
 			meta->view_center_y -= point_under_cursor_y - y;
 			snap_zoom = true; 
 			break;
-		}
+		//}
 
-		case SDL_BUTTON_WHEELDOWN:
+		//case SDL_BUTTON_WHEELDOWN:
 		{
 			meta->view_zoom *= TOOL_SELECTION_ZOOM_RATE;
 	
@@ -430,7 +430,7 @@ bool tool_selection_mouse_down(double x, double y, int button)
 			meta->view_center_y -= point_under_cursor_y - y;
 			snap_zoom = true;
 			break;
-		}
+		} }
 	}
 
 	if (snap_zoom) 

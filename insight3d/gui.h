@@ -99,10 +99,30 @@ struct GUI_Panel
 	GUI_GLView_Render glview_render;
 };
 
+typedef struct SDL_VideoInfo {
+        Uint32 hw_available :1; /**< Flag: Can you create hardware surfaces? */
+        Uint32 wm_available :1; /**< Flag: Can you talk to a window manager? */
+        Uint32 UnusedBits1  :6;
+        Uint32 UnusedBits2  :1;
+        Uint32 blit_hw      :1; /**< Flag: Accelerated blits HW --> HW */
+        Uint32 blit_hw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
+        Uint32 blit_hw_A    :1; /**< Flag: Accelerated blits with Alpha */
+        Uint32 blit_sw      :1; /**< Flag: Accelerated blits SW --> HW */
+        Uint32 blit_sw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
+        Uint32 blit_sw_A    :1; /**< Flag: Accelerated blits with Alpha */
+        Uint32 blit_fill    :1; /**< Flag: Accelerated color fill */
+        Uint32 UnusedBits3  :16;
+        Uint32 video_mem;       /**< The total amount of video memory (in K) */
+        SDL_PixelFormat *vfmt;  /**< Value: The format of the video surface */
+        int    current_w;       /**< Value: The current video mode width */
+        int    current_h;       /**< Value: The current video mode height */
+} SDL_VideoInfo;
+
 // context holds information needed to draw on screen, respond to events, etc. 
 struct GUI_Context
 {
 	const SDL_VideoInfo * video_info;
+        SDL_Window * sdl_window;
 	SDL_Surface * surface;
 	int video_flags;
 

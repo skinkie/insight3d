@@ -307,22 +307,22 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
 	// go through all corners of selection box and reconstruct 2 points in different depth levels
 	for (char i = 0; i < 8; i++) 
 	{
-		gluUnProject(
+		/*gluUnProject(
 			i % 2 == 0 ? x1 : x2, i / 2 % 2 == 0 ? y1 : y2, i / 4, 
 			visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport, 
 			unprojected[i], unprojected[i] + 1, unprojected[i] + 2
-		); 
+		);*/ 
 
 		// denormalize to obtain 3d position of the corner in vertices' reference plane
 		visualization_denormalize_vector(unprojected[i]);
 	}
 
 	// also calculate position of some point inside the pyramid 
-	gluUnProject(
+	/*gluUnProject(
 		average_value(x1, x2), average_value(y1, y2), 0.5,
 		visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport, 
 		unprojected[8], unprojected[8] + 1, unprojected[8] + 2
-	); 
+	);*/ 
 
 	// also denormalize
 	visualization_denormalize_vector(unprojected[8]);

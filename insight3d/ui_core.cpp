@@ -39,12 +39,12 @@ bool ui_initialize()
 	ui_state.previous_mode = UI_MODE_INSPECTION;
 
 	// user interface state initialization
-	ui_state.key_state = ALLOC(Uint8, SDLK_LAST);
-	memset(ui_state.key_state, 0, sizeof(Uint8) * SDLK_LAST);
-	ui_state.keys = SDL_GetKeyState(&ui_state.keys_length);
-	ui_state.shot_clear_keys = ALLOC(bool, ui_state.keys_length); 
-	ui_state.inspection_clear_keys = ALLOC(bool, ui_state.keys_length); 
-	ui_state.overview_clear_keys = ALLOC(bool, ui_state.keys_length);
+	//ui_state.key_state = ALLOC(Uint8, SDLK_LAST);
+	//memset(ui_state.key_state, 0, sizeof(Uint8) * SDLK_LAST);
+	ui_state.keys = (Uint8*)SDL_GetKeyboardState((int*)&ui_state.keys_length);
+	//ui_state.shot_clear_keys = ALLOC(bool, ui_state.keys_length); 
+	//ui_state.inspection_clear_keys = ALLOC(bool, ui_state.keys_length); 
+	//ui_state.overview_clear_keys = ALLOC(bool, ui_state.keys_length);
 	ui_state.mouse_x = ui_state.mouse_y = ui_state.mouse_down_x = ui_state.mouse_down_y = 0; 
 	ui_state.mouse_down_ticks = 0;
 	ui_state.mouse_down = false;
@@ -53,18 +53,18 @@ bool ui_initialize()
 	// todo rewrite
 
 	// shot clear keys 
-	memset(ui_state.shot_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+        ui_state.shot_clear_keys.clear();
 	ui_state.shot_clear_keys[SDLK_LEFT] = ui_state.shot_clear_keys[SDLK_RIGHT] = ui_state.shot_clear_keys[SDLK_UP] 
 	= ui_state.shot_clear_keys[SDLK_DOWN] = ui_state.shot_clear_keys[SDLK_PAGEDOWN] = ui_state.shot_clear_keys[SDLK_PAGEUP] 
 	= ui_state.shot_clear_keys[SDLK_HOME] = ui_state.shot_clear_keys[SDLK_END]
 	= true;
 
 	// inspection clear keys 
-	memset(ui_state.inspection_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+        ui_state.inspection_clear_keys.clear();
 	ui_state.inspection_clear_keys[SDLK_g] = true; 
 
 	// overview clear keys
-	memset(ui_state.overview_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+	ui_state.overview_clear_keys.clear();
 	
 	// keys cleared in all states 
 	ui_state.overview_clear_keys[SDLK_TAB] = ui_state.overview_clear_keys[SDLK_F10] = true; 
@@ -102,9 +102,9 @@ bool ui_initialize()
 // release allocated memory (called when program terminates)
 void ui_release()
 {
-	FREE(ui_state.shot_clear_keys);
-	FREE(ui_state.inspection_clear_keys);
-	FREE(ui_state.overview_clear_keys);
+	//FREE(ui_state.shot_clear_keys);
+	//FREE(ui_state.inspection_clear_keys);
+	//FREE(ui_state.overview_clear_keys);
 }
 
 // create new GUI item structure 
@@ -183,7 +183,7 @@ bool ui_agar_initialization()
 	gui_helper_initialize_sdl(width, height);
 	gui_helper_initialize_opengl();
 	gui_helper_opengl_adjust_size(width, height);
-	SDL_WM_SetCaption("insight3d", NULL);
+	//SDL_WM_SetCaption("insight3d", NULL);
 	gui_set_size(width, height);
 
 	return true; 

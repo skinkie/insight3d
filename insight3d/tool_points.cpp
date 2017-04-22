@@ -174,7 +174,7 @@ bool tool_points_mouse_down(double x, double y, int button)
 	if (sdl_wheel_button(button) || button == SDL_BUTTON_RIGHT) 
 	{
 		bool result = tool_selection_mouse_down(x, y, button); 
-		if (button == SDL_BUTTON_WHEELUP || button == SDL_BUTTON_WHEELDOWN) points_fill_context_menu(true);
+		//if (button == SDL_BUTTON_WHEELUP || button == SDL_BUTTON_WHEELDOWN) points_fill_context_menu(true);
 		return result;
 	}
 	

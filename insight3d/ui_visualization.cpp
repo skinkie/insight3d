@@ -50,7 +50,7 @@ void visualization_prepare_inspection_projection(double fovx)
 	glLoadIdentity();
 	const double ratio = gui_get_width(ui_state.gl) / (double)gui_get_height(ui_state.gl);
 	const double fovy = fovx / ratio;
-	gluPerspective(fovx, ratio, 0.1, 1000);
+	//gluPerspective(fovx, ratio, 0.1, 1000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -1502,7 +1502,7 @@ void visualization_inspection_user_camera(double world_scale /*= 1*/)
 		);
 
 		// opengl transformation
-		gluLookAt(
+		/*gluLookAt(
 			world_scale * visualization_normalize(center[X], X),
 			world_scale * visualization_normalize(center[Y], Y),
 			world_scale * visualization_normalize(center[Z], Z),
@@ -1512,7 +1512,7 @@ void visualization_inspection_user_camera(double world_scale /*= 1*/)
 			up[X],
 			up[Y], 
 			up[Z]
-		);
+		);*/
 	}
 }
 

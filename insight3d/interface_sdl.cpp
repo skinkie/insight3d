@@ -28,7 +28,7 @@
 // note unused when using AgarGUI, but might be useful someday
 void sdl_initialize(int window_width, int window_height)
 {	
-	const SDL_VideoInfo * info = NULL;
+	//const SDL_VideoInfo * info = NULL;
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) 
 	{
@@ -38,12 +38,12 @@ void sdl_initialize(int window_width, int window_height)
 
 	atexit(SDL_Quit);
 
-	info = SDL_GetVideoInfo();
+	/*info = SDL_GetVideoInfo();
 	if (!info)
 	{
 		fprintf(stderr, "Video query failed: %s\n", SDL_GetError());
 		exit(1);
-	}
+	}*/
 
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
@@ -51,16 +51,16 @@ void sdl_initialize(int window_width, int window_height)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-	int bpp = info->vfmt->BitsPerPixel;
-	int flags = SDL_OPENGL;// | SDL_RESIZABLE; // debug
+	//int bpp = info->vfmt->BitsPerPixel;
+	//int flags = SDL_OPENGL;// | SDL_RESIZABLE; // debug
 
-	if (SDL_SetVideoMode(window_width, window_height, bpp, flags) == 0)
+	/*if (SDL_SetVideoMode(window_width, window_height, bpp, flags) == 0)
 	{
 		fprintf(stderr, "Video mode set failed: %s\n", SDL_GetError());
 		exit(1);
-	}
+	}*/
 
-	SDL_WM_SetCaption("OpenGL window", NULL);
+	//SDL_WM_SetCaption("OpenGL window", NULL);
 }
 
 // reset keys status to false
@@ -79,24 +79,24 @@ Uint32 sdl_map_rgb_vector(const SDL_PixelFormat * const format, const double col
 
 // button is mouse wheel 
 bool sdl_wheel_button(int button) 
-{
-	return button == SDL_BUTTON_WHEELUP || button == SDL_BUTTON_MIDDLE || button == SDL_BUTTON_WHEELDOWN;
+{ return 0;
+	//return button == SDL_BUTTON_WHEELUP || button == SDL_BUTTON_MIDDLE || button == SDL_BUTTON_WHEELDOWN;
 }
 
 // get modifiers 
 bool sdl_shift_pressed() 
 {
-	SDLMod mod = SDL_GetModState();
+	SDL_Keymod mod = SDL_GetModState();
 	return (bool)(mod & KMOD_SHIFT);
 }
 
 bool sdl_ctrl_pressed() 
 {
-	SDLMod mod = SDL_GetModState();
+	SDL_Keymod mod = SDL_GetModState();
 	return (bool)(mod & KMOD_CTRL);
 }
 bool sdl_alt_pressed() 
 {
-	SDLMod mod = SDL_GetModState();
+	SDL_Keymod mod = SDL_GetModState();
 	return (bool)(mod & KMOD_ALT);
 }

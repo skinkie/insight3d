@@ -74,22 +74,22 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 	}
 
     // fetch the video info
-	if (!(gui_context.video_info = SDL_GetVideoInfo()))
+	/*if (!(gui_context.video_info = SDL_GetVideoInfo()))
 	{
 		fprintf(stderr, "[GUI] Video query failed: %s\n", SDL_GetError());
 		return false;
-	}
+	}*/
 
     // set the flags
-    gui_context.video_flags  = SDL_OPENGL;          // enable opengl
+    gui_context.video_flags  = SDL_WINDOW_OPENGL;          // enable opengl
     gui_context.video_flags |= SDL_GL_DOUBLEBUFFER; // double buffering prevents flickering
-    gui_context.video_flags |= SDL_HWPALETTE;       // store palette in hardware 
-    gui_context.video_flags |= SDL_RESIZABLE;       // enable resizing
+    //gui_context.video_flags |= SDL_WINDOW_HWPALETTE;       // store palette in hardware 
+    gui_context.video_flags |= SDL_WINDOW_RESIZABLE;       // enable resizing
 
     // check if surfaces can be stored in hardware
-    if (gui_context.video_info->hw_available)
+    if (gui_context.video_info) //->hw_available)
 	{
-		gui_context.video_flags |= SDL_HWSURFACE;
+		//gui_context.video_flags |= SDL_HWSURFACE;
 	}
     else
 	{
@@ -99,14 +99,20 @@ bool gui_helper_initialize_sdl(const int width, const int height)
     // check if hardware blits can be done
 	if (gui_context.video_info->blit_hw)
 	{
-		gui_context.video_flags |= SDL_HWACCEL;
+		//gui_context.video_flags |= SDL_HWACCEL;
 	}
 
     // turn on opengl double buffering 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     // get sdl surface to draw on
-	if (!(gui_context.surface = SDL_SetVideoMode(width, height, 32, gui_context.video_flags)))
+	gui_context.surface = SDL_CreateRGBSurface(0, width, height, 32,
+                                        0x00FF0000,
+                                        0x0000FF00,
+                                        0x000000FF,
+                                        0xFF000000);
+//	if (!(gui_context.surface = SDL_SetVideoMode(width, height, 32, gui_context.video_flags)))
+	if (!gui_context.surface)
 	{
 	    fprintf(stderr, "[GUI] Video mode set failed: %s\n", SDL_GetError());
 		return false;
@@ -150,7 +156,7 @@ void gui_helper_opengl_adjust_size(int width, int height)
 	// set camera
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, ratio, 0.001, 1000.0);
+	//gluPerspective(45.0, ratio, 0.001, 1000.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }

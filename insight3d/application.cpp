@@ -102,7 +102,7 @@ bool main_loop()
 			cvWaitKey(1);
 
 			// switch SDL buffers
-			SDL_GL_SwapBuffers();
+			SDL_GL_SwapWindow(gui_context.sdl_window);
 		}
 
 		SDL_Event event;
@@ -126,10 +126,11 @@ bool main_loop()
 						break; 
 					}
 
-					case SDL_VIDEORESIZE:
+					case SDL_WINDOWEVENT_RESIZED:
 					{
 						// resize the screen 
-						if (!(gui_context.surface = SDL_SetVideoMode(event.resize.w, event.resize.h, 32, gui_context.video_flags)))
+						if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
+							SDL_WINDOWPOS_UNDEFINED, event.window.data1, event.window.data2, gui_context.video_flags)))
 						{
 							fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
 							core_state.running = false;
@@ -137,8 +138,8 @@ bool main_loop()
 						}
 
 						gui_helper_initialize_opengl();
-						gui_helper_opengl_adjust_size(event.resize.w, event.resize.h);
-						gui_set_size(event.resize.w, event.resize.h);
+						gui_helper_opengl_adjust_size(event.window.data1, event.window.data2);
+						gui_set_size(event.window.data1, event.window.data2);
 
 						// release all opengl textures // note we're waiting for SDL 1.3 to do this right
 						for (size_t i = 0; i < gui_context.panels_count; i++) 
