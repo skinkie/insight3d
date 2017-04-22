@@ -109,44 +109,40 @@ void ui_context_display(double shot_x, double shot_y)
 	double total_width = visualization_calc_dx(max_width) + 2 * border_x;
 
 	// draw shadow 
-	LOCK_RW(opengl)
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	const int shadow_precision = 12, shadow_depth = 3;
+	for (int j = 0; j <= shadow_depth; j++) 
 	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		const int shadow_precision = 12, shadow_depth = 3;
-		for (int j = 0; j <= shadow_depth; j++) 
+		for (int i = 0; i <= shadow_precision; i++) 
 		{
-			for (int i = 0; i <= shadow_precision; i++) 
+			const double a = i * 2 * CORE_PI / shadow_precision;
+			double dx = j * 2.0 * x_px * cos(a), dy = j * 2.0 * y_px * sin(a);
+			if (j != shadow_depth || i != shadow_precision) 
 			{
-				const double a = i * 2 * CORE_PI / shadow_precision;
-				double dx = j * 2.0 * x_px * cos(a), dy = j * 2.0 * y_px * sin(a);
-				if (j != shadow_depth || i != shadow_precision) 
-				{
-					glColor4d(0, 0, 0, 0.02 * animation_alpha);
-				}
-				else
-				{
-					glColor4d(105 / 255.0, 105 / 255.0, 105 / 255.0, animation_alpha);
-					dx = 0; 
-					dy = 0;
-				}
-
-				glBegin(GL_POLYGON);
-					glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2, -1);
-					glVertex3d(x + dx + distance_to_cursor + total_width, y + dy - symbol_height / 2, -1);
-					glVertex3d(x + dx + distance_to_cursor + total_width, y + dy - symbol_height / 2 + total_height, -1);
-					glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2 + total_height, -1);
-				glEnd();
-				glBegin(GL_POLYGON);
-					glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2, -1);
-					glVertex3d(x + dx + distance_to_cursor, y + dy + symbol_height / 2, -1);
-					glVertex3d(x + dx + distance_to_cursor - symbol_width / 2, y + dy, -1);
-				glEnd();
+				glColor4d(0, 0, 0, 0.02 * animation_alpha);
 			}
+			else
+			{
+				glColor4d(105 / 255.0, 105 / 255.0, 105 / 255.0, animation_alpha);
+				dx = 0; 
+				dy = 0;
+			}
+
+			glBegin(GL_POLYGON);
+				glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2, -1);
+				glVertex3d(x + dx + distance_to_cursor + total_width, y + dy - symbol_height / 2, -1);
+				glVertex3d(x + dx + distance_to_cursor + total_width, y + dy - symbol_height / 2 + total_height, -1);
+				glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2 + total_height, -1);
+			glEnd();
+			glBegin(GL_POLYGON);
+				glVertex3d(x + dx + distance_to_cursor, y + dy - symbol_height / 2, -1);
+				glVertex3d(x + dx + distance_to_cursor, y + dy + symbol_height / 2, -1);
+				glVertex3d(x + dx + distance_to_cursor - symbol_width / 2, y + dy, -1);
+			glEnd();
 		}
-		glDisable(GL_BLEND);
 	}
-	UNLOCK_RW(opengl);
+	glDisable(GL_BLEND);
 
 	// draw items 
 	double y_level = border_y;
@@ -175,19 +171,15 @@ void ui_context_display(double shot_x, double shot_y)
 			double tx, ty, sx, sy; 
 			if (image_loader_opengl_upload_ready(item->request, &texture, &tx, &ty, &sx, &sy))
 			{
-				LOCK_RW(opengl)
-				{
-					glBindTexture(GL_TEXTURE_2D, texture);
-					glColor4d(1, 1, 1, animation_alpha);
-					glBegin(GL_POLYGON);
-						glTexCoord2d(tx, sy); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level, -1);
-						glTexCoord2d(sx, sy); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level, -1);
-						glTexCoord2d(sx, ty); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level + item_height, -1);
-						glTexCoord2d(tx, ty); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level + item_height, -1);
-					glEnd();
-					glBindTexture(GL_TEXTURE_2D, 0);
-				}
-				UNLOCK_RW(opengl);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				glColor4d(1, 1, 1, animation_alpha);
+				glBegin(GL_POLYGON);
+					glTexCoord2d(tx, sy); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level, -1);
+					glTexCoord2d(sx, sy); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level, -1);
+					glTexCoord2d(sx, ty); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level + item_height, -1);
+					glTexCoord2d(tx, ty); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level + item_height, -1);
+				glEnd();
+				glBindTexture(GL_TEXTURE_2D, 0);
 
 				drawn = true;
 			}
@@ -208,19 +200,15 @@ void ui_context_display(double shot_x, double shot_y)
 				sx = shot_x + 0.33 * UI_CONTEXT_SCALE * (item->width / (double)shots.data[ui_state.current_shot].width);
 				sy = shot_y + 0.33 * UI_CONTEXT_SCALE * (item->height / (double)shots.data[ui_state.current_shot].height);
 
-				LOCK_RW(opengl)
-				{
-					glBindTexture(GL_TEXTURE_2D, texture);
-					glColor4d(1, 1, 1, animation_alpha);
-					glBegin(GL_POLYGON);
-						glTexCoord2d(tx, sy); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level, -1);
-						glTexCoord2d(sx, sy); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level, -1);
-						glTexCoord2d(sx, ty); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level + item_height, -1);
-						glTexCoord2d(tx, ty); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level + item_height, -1);
-					glEnd();
-					glBindTexture(GL_TEXTURE_2D, 0);
-				}
-				UNLOCK_RW(opengl);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				glColor4d(1, 1, 1, animation_alpha);
+				glBegin(GL_POLYGON);
+					glTexCoord2d(tx, sy); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level, -1);
+					glTexCoord2d(sx, sy); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level, -1);
+					glTexCoord2d(sx, ty); glVertex3d(x + distance_to_cursor + border_x + item_width, y - symbol_height / 2 + y_level + item_height, -1);
+					glTexCoord2d(tx, ty); glVertex3d(x + distance_to_cursor + border_x, y - symbol_height / 2 + y_level + item_height, -1);
+				glEnd();
+				glBindTexture(GL_TEXTURE_2D, 0);
 
 				drawn = true;
 			}
@@ -231,31 +219,27 @@ void ui_context_display(double shot_x, double shot_y)
 		{
 			if (item->decoration == UI_CONTEXT_CROSSHAIR)
 			{
-				LOCK_RW(opengl)
-				{
-					glLineWidth(1);
-					const double
-						cx = x + distance_to_cursor + border_x + item_width / 2,
-						cy = y - symbol_height / 2 + y_level + item_height / 2;
-					
-					glBegin(GL_LINES);
-						glColor4d(0, 0, 0, 0.7);
-						glVertex3d(cx - (crosshair_distance + crosshair_length) * x_px, cy, -1);
-						glVertex3d(cx - (crosshair_distance) * x_px, cy, -1);
-						glVertex3d(cx + (crosshair_distance + crosshair_length) * x_px, cy, -1);
-						glVertex3d(cx + (crosshair_distance) * x_px, cy, -1);
-						glVertex3d(cx, cy - (crosshair_distance + crosshair_length) * y_px, -1);
-						glVertex3d(cx, cy - (crosshair_distance) * y_px, -1);
-						glVertex3d(cx, cy + (crosshair_distance + crosshair_length) * y_px, -1);
-						glVertex3d(cx, cy + (crosshair_distance) * y_px, -1);
-						glColor4d(1, 1, 1, 0.2);
-						glVertex3d(cx, cy - (crosshair_distance) * y_px, -1);
-						glVertex3d(cx, cy + (crosshair_distance) * y_px, -1);
-						glVertex3d(cx - (crosshair_distance) * x_px, cy, -1);
-						glVertex3d(cx + (crosshair_distance) * x_px, cy, -1);
-					glEnd();
-				}
-				UNLOCK_RW(opengl);
+				glLineWidth(1);
+				const double
+					cx = x + distance_to_cursor + border_x + item_width / 2,
+					cy = y - symbol_height / 2 + y_level + item_height / 2;
+				
+				glBegin(GL_LINES);
+					glColor4d(0, 0, 0, 0.7);
+					glVertex3d(cx - (crosshair_distance + crosshair_length) * x_px, cy, -1);
+					glVertex3d(cx - (crosshair_distance) * x_px, cy, -1);
+					glVertex3d(cx + (crosshair_distance + crosshair_length) * x_px, cy, -1);
+					glVertex3d(cx + (crosshair_distance) * x_px, cy, -1);
+					glVertex3d(cx, cy - (crosshair_distance + crosshair_length) * y_px, -1);
+					glVertex3d(cx, cy - (crosshair_distance) * y_px, -1);
+					glVertex3d(cx, cy + (crosshair_distance + crosshair_length) * y_px, -1);
+					glVertex3d(cx, cy + (crosshair_distance) * y_px, -1);
+					glColor4d(1, 1, 1, 0.2);
+					glVertex3d(cx, cy - (crosshair_distance) * y_px, -1);
+					glVertex3d(cx, cy + (crosshair_distance) * y_px, -1);
+					glVertex3d(cx - (crosshair_distance) * x_px, cy, -1);
+					glVertex3d(cx + (crosshair_distance) * x_px, cy, -1);
+				glEnd();
 			}
 		}
 

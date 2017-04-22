@@ -7,7 +7,6 @@
 #include "cv.h"
 #include "highgui.h"
 #include <math.h>
-#include "pthread.h"
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)-1)
@@ -16,22 +15,16 @@
 
 // settings 
 #define GUI_MAX_PANELS 4192
-#define GUI_EVENT_QUEUE_LENGTH 4192
-
-// fixes 
-extern bool mousealreadydown;
 
 // forward declarations 
 struct GUI_Panel;
-struct GUI_Event_Descriptor;
 
 // enums 
 enum GUI_Menu_Type { GUI_MAIN_MENU_CONTAINER, GUI_MAIN_MENU_ITEM, GUI_MENU_ITEM };
 
 // callbacks
 typedef void (*GUI_Positioner)(GUI_Panel * panel);
-// typedef void (*GUI_Event)(GUI_Panel * panel, SDL_Event sdl_event);
-typedef void (*GUI_Event)(GUI_Event_Descriptor event);
+typedef void (*GUI_Event)(GUI_Panel * panel);
 typedef void (*GUI_Render)(GUI_Panel * panel);
 typedef void (*GUI_GLView_Render)();
 
@@ -40,9 +33,6 @@ struct GUI_Panel
 {
 	// debug identifier
 	const char * debugging_title;
-
-	// pointer to original in case we make copies of the structure 
-	GUI_Panel * original;
 
 	// parent and sibling can be used to calculate panel's position and size
 	GUI_Panel * parent, * sibling;
@@ -68,11 +58,6 @@ struct GUI_Panel
 		on_focus, on_unfocus, on_mousemove, on_mousedown, on_mousedownout, 
 		on_mouseup, on_menuitemaction, on_buttonaction;
 
-	// event meta info 
-	bool 
-		on_focus_is_internal, on_unfocus_is_internal, on_mousemove_is_internal, on_mousedown_is_internal, on_mousedownout_is_internal, 
-		on_mouseup_is_internal, on_menuitemaction_is_internal, on_buttonaction_is_internal;
-
 	// computed coordinates - the region taken by the panel
 	int x1, y1, x2, y2;
 
@@ -84,7 +69,6 @@ struct GUI_Panel
 
 	// rendering function
 	GUI_Render on_render;
-	bool on_render_is_internal;
 
 	// data controlled by the UI element 
 	int i; 
@@ -115,37 +99,42 @@ struct GUI_Panel
 	GUI_GLView_Render glview_render;
 };
 
-// event stored in queue waiting to be processed 
-struct GUI_Event_Descriptor
-{
-	SDL_Event sdl_event;
-	GUI_Panel * panel;
-	GUI_Event handler;
-};
+typedef struct SDL_VideoInfo {
+        Uint32 hw_available :1; /**< Flag: Can you create hardware surfaces? */
+        Uint32 wm_available :1; /**< Flag: Can you talk to a window manager? */
+        Uint32 UnusedBits1  :6;
+        Uint32 UnusedBits2  :1;
+        Uint32 blit_hw      :1; /**< Flag: Accelerated blits HW --> HW */
+        Uint32 blit_hw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
+        Uint32 blit_hw_A    :1; /**< Flag: Accelerated blits with Alpha */
+        Uint32 blit_sw      :1; /**< Flag: Accelerated blits SW --> HW */
+        Uint32 blit_sw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
+        Uint32 blit_sw_A    :1; /**< Flag: Accelerated blits with Alpha */
+        Uint32 blit_fill    :1; /**< Flag: Accelerated color fill */
+        Uint32 UnusedBits3  :16;
+        Uint32 video_mem;       /**< The total amount of video memory (in K) */
+        SDL_PixelFormat *vfmt;  /**< Value: The format of the video surface */
+        int    current_w;       /**< Value: The current video mode width */
+        int    current_h;       /**< Value: The current video mode height */
+} SDL_VideoInfo;
 
 // context holds information needed to draw on screen, respond to events, etc. 
 struct GUI_Context
 {
 	const SDL_VideoInfo * video_info;
+        SDL_Window * sdl_window;
 	SDL_Surface * surface;
 	int video_flags;
 
 	int width, height;
 	double px, py; // pixel width and height
 
-	char title[256];
-
 	GUI_Panel root_panel;
 	GUI_Panel * panels[GUI_MAX_PANELS];
 	size_t panels_count;
 
-	/*// todo document this
 	SDL_Event * event;
-	bool event_cancelled;*/
-	
-	// event queue 
-	GUI_Event_Descriptor event_queue[GUI_EVENT_QUEUE_LENGTH]; 
-	size_t event_queue_top, event_queue_bottom;
+	bool event_cancelled;
 
 	// font support 
 	CvFont font;
@@ -157,14 +146,13 @@ extern GUI_Context gui_context;
 void gui_initialize();
 
 // helper functions 
-bool gui_helper_initialize();
-bool gui_helper_initialize_sdl();
+bool gui_helper_initialize(const int width, const int height);
+bool gui_helper_initialize_sdl(int width, int height);
 bool gui_helper_initialize_opengl(); 
-void gui_helper_opengl_adjust_size();
+void gui_helper_opengl_adjust_size(const int width, const int height);
 
 // settings
 void gui_set_size(const int width, const int height); 
-void gui_set_title(const char * const title);
 
 // define gui elements 
 GUI_Panel * gui_get_root_panel();
@@ -189,12 +177,11 @@ void gui_below_fill(GUI_Panel * panel);
 void gui_below_on_the_right_fill(GUI_Panel * panel);
 void gui_no_position(GUI_Panel * panel);
 
-// event handling
+// event handling 
 #define GUI_EVENT_HANDLER(panel, event) panel->on_##event
 #define GUI_SET_RENDERING_STYLE(panel, style) panel->on_render = gui_style_##style
 void gui_set_style(GUI_Panel * panel, GUI_Render rendering_function);
-// void gui_cancel_event(); // currently unused // todo this probably stopped working since the introduction of multiple threads... might work on internally handled events 
-bool gui_poll_event(GUI_Event_Descriptor * event);
+void gui_cancel_event(); // currently unused
 
 // setters
 void gui_set_panel_visible(GUI_Panel * panel, bool visibility);
@@ -216,18 +203,11 @@ void gui_caption_render(GUI_Panel * panel);
 void gui_caption_discard(GUI_Panel * panel);
 void gui_caption_discard_opengl_texture(GUI_Panel * panel);
 
-// rendering thread 
-bool gui_start_rendering_thread();
-
-// respond to SDL events
+// respond to events
 bool gui_resolve_mousemotion(SDL_Event * event);
 bool gui_resolve_mousebuttondown(SDL_Event * event);
 bool gui_resolve_mousebuttonup(SDL_Event * event);
 bool gui_resolve_event(SDL_Event * event);
-
-// locking GUI system 
-void gui_lock();
-void gui_unlock(); 
 
 /* Auxiliary functions - opengl */
 
@@ -254,8 +234,8 @@ GUI_Panel * gui_new_menu_item(GUI_Panel * parent, char * caption);
 void gui_set_menu_action(GUI_Panel * panel, GUI_Event event);
 
 // menu event handlers
-void gui_menu_event_mousedown(const GUI_Event_Descriptor event);
-void gui_menu_event_mousedownout(const GUI_Event_Descriptor event);
+void gui_menu_event_mousedown(GUI_Panel * panel);
+void gui_menu_event_mousedownout(GUI_Panel * panel);
 
 /* Tabs */
 
@@ -264,7 +244,7 @@ GUI_Panel * gui_new_tabs(GUI_Panel * parent, GUI_Panel * sibling, GUI_Positioner
 GUI_Panel * gui_new_tab(GUI_Panel * tabs_container, const char * title);
 
 // mouse event handlers 
-void gui_tab_event_mousedown(const GUI_Event_Descriptor event);
+void gui_tab_event_mousedown(GUI_Panel * panel);
 
 /* Labels */ 
 
@@ -281,7 +261,7 @@ bool gui_get_checkbox(GUI_Panel * checkbox);
 void gui_set_checkbox(GUI_Panel * checkbox, bool value);
 
 // mouse event handlers
-void gui_checkbox_event_mousedown(const GUI_Event_Descriptor event);
+void gui_checkbox_event_mousedown(GUI_Panel * panel);
 
 /* Radio buttons */ 
 
@@ -295,7 +275,7 @@ int gui_get_width(GUI_Panel * panel);
 int gui_get_height(GUI_Panel * panel);
 
 // mouse event handlers 
-void gui_radio_event_mousedown(const GUI_Event_Descriptor event);
+void gui_radio_event_mousedown(GUI_Panel * panel);
 
 /* Buttons */ 
 
@@ -303,7 +283,7 @@ void gui_radio_event_mousedown(const GUI_Event_Descriptor event);
 GUI_Panel * gui_new_button(GUI_Panel * parent, GUI_Panel * sibling, const char * caption, GUI_Event button_clicked);
 
 // mouse event handlers
-void gui_button_event_mousedown(const GUI_Event_Descriptor event);
+void gui_button_event_mousedown(GUI_Panel * panel);
 
 /* GLView */ 
 

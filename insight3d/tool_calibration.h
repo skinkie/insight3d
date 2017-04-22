@@ -43,7 +43,6 @@ void tool_calibration_add_views();
 void tool_calibration_refine();
 void tool_calibration_refine_strict();
 void tool_calibration_metric();
-void tool_calibration_print();
 void tool_calibration_use();
 void tool_calibration_affine();
 void tool_calibration_triangulate();
@@ -55,6 +54,5 @@ void tool_calibration_auto();
 void tool_calibration_auto_begin();
 void tool_calibration_auto_step();
 void tool_calibration_auto_end(); 
-void tool_calibration_test_rectification();
 
 #endif

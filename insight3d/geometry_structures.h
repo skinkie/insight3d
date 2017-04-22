@@ -46,10 +46,6 @@ extern "C" {
 #endif
 }
 
-// * threading support *
-
-extern pthread_mutex_t geometry_mutex;
-
 // * meta information about geometric objects *
 
 enum GEOMETRY_ITEM_TYPE { GEOMETRY_UNSPECIFIED, GEOMETRY_POINT, GEOMETRY_VERTEX, GEOMETRY_SHOT };

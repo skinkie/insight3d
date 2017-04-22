@@ -61,6 +61,10 @@ struct Image_Loader_Request
 	Image_Loader_Quality gl_texture_quality;
 	double gl_texture_min_x, gl_texture_min_y, gl_texture_max_x, gl_texture_max_y;
 	IplImage * image;
+
+	// lock for multi-threading
+	// note currently unused
+	pthread_mutex_t lock;
 };
 
 DYNAMIC_STRUCTURE_DECLARATIONS(Image_Loader_Requests, Image_Loader_Request);
@@ -110,7 +114,6 @@ void * image_loader_thread_function(void * arg);
 
 // initialize image loader subsystem 
 bool image_loader_initialize(const int cache_full_count, const int cache_low_count);
-bool image_loader_start_thread();
 
 // release image loader subsystem 
 // todo release also shots and requests 

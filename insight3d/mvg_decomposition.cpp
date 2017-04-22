@@ -28,8 +28,11 @@
 // decomposition of projection matrix into rotation, translation and internal calibration 
 bool mvg_finite_projection_matrix_decomposition(CvMat * const P, CvMat * const K, CvMat * const R, CvMat * const T)
 {
-	// extract camera center, i.e. calculate the right null vector of P 
-	CvMat * W = cvCreateMat(4, 1, CV_64F), * V_transposed = cvCreateMat(4, 4, CV_64F);
+	// extract camera center, i.e. calculate the right null vector of P
+	// ADT BUGFIX: reduced size of W to match min dimension of P
+	int m = P->rows, n = P->cols, nm = std::min(m, n);
+
+	CvMat * W = cvCreateMat(nm, 1, CV_64F), * V_transposed = cvCreateMat(4, 4, CV_64F);
 	cvSVD(P, W, NULL, V_transposed, CV_SVD_V_T); // todo check singular values of P for numerical stability
 
 	// check for camera at infinity 

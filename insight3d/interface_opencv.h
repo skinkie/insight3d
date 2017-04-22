@@ -23,15 +23,19 @@
 
 #include "stdio.h"
 #include "pthread.h"
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
-
-extern pthread_mutex_t opencv_mutex;
+#include "cv.h"
+#include "highgui.h"
 
 const double OPENCV_PI = 3.14159265358979323846;
 
 // macro for accessing double precision matrix elements // todo avoid using OpenCV macro
 #define OPENCV_ELEM(matrix, i, j) (CV_MAT_ELEM((*(matrix)), double, (i), (j)))
+
+// thread safety 
+void opencv_begin();
+
+// thread safety
+void opencv_end();
 
 // create double precision matrix filled with zeros
 CvMat * opencv_create_matrix(const size_t rows, const size_t cols);

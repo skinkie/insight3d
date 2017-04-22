@@ -39,12 +39,12 @@ bool ui_initialize()
 	ui_state.previous_mode = UI_MODE_INSPECTION;
 
 	// user interface state initialization
-	ui_state.key_state = ALLOC(Uint8, SDLK_LAST);
-	memset(ui_state.key_state, 0, sizeof(Uint8) * SDLK_LAST);
-	ui_state.keys = SDL_GetKeyState(&ui_state.keys_length);
-	ui_state.shot_clear_keys = ALLOC(bool, ui_state.keys_length); 
-	ui_state.inspection_clear_keys = ALLOC(bool, ui_state.keys_length); 
-	ui_state.overview_clear_keys = ALLOC(bool, ui_state.keys_length);
+	//ui_state.key_state = ALLOC(Uint8, SDLK_LAST);
+	//memset(ui_state.key_state, 0, sizeof(Uint8) * SDLK_LAST);
+	ui_state.keys = (Uint8*)SDL_GetKeyboardState((int*)&ui_state.keys_length);
+	//ui_state.shot_clear_keys = ALLOC(bool, ui_state.keys_length); 
+	//ui_state.inspection_clear_keys = ALLOC(bool, ui_state.keys_length); 
+	//ui_state.overview_clear_keys = ALLOC(bool, ui_state.keys_length);
 	ui_state.mouse_x = ui_state.mouse_y = ui_state.mouse_down_x = ui_state.mouse_down_y = 0; 
 	ui_state.mouse_down_ticks = 0;
 	ui_state.mouse_down = false;
@@ -53,18 +53,18 @@ bool ui_initialize()
 	// todo rewrite
 
 	// shot clear keys 
-	memset(ui_state.shot_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+        ui_state.shot_clear_keys.clear();
 	ui_state.shot_clear_keys[SDLK_LEFT] = ui_state.shot_clear_keys[SDLK_RIGHT] = ui_state.shot_clear_keys[SDLK_UP] 
 	= ui_state.shot_clear_keys[SDLK_DOWN] = ui_state.shot_clear_keys[SDLK_PAGEDOWN] = ui_state.shot_clear_keys[SDLK_PAGEUP] 
 	= ui_state.shot_clear_keys[SDLK_HOME] = ui_state.shot_clear_keys[SDLK_END]
 	= true;
 
 	// inspection clear keys 
-	memset(ui_state.inspection_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+        ui_state.inspection_clear_keys.clear();
 	ui_state.inspection_clear_keys[SDLK_g] = true; 
 
 	// overview clear keys
-	memset(ui_state.overview_clear_keys, 0, ui_state.keys_length * sizeof(bool));
+	ui_state.overview_clear_keys.clear();
 	
 	// keys cleared in all states 
 	ui_state.overview_clear_keys[SDLK_TAB] = ui_state.overview_clear_keys[SDLK_F10] = true; 
@@ -102,9 +102,9 @@ bool ui_initialize()
 // release allocated memory (called when program terminates)
 void ui_release()
 {
-	FREE(ui_state.shot_clear_keys);
-	FREE(ui_state.inspection_clear_keys);
-	FREE(ui_state.overview_clear_keys);
+	//FREE(ui_state.shot_clear_keys);
+	//FREE(ui_state.inspection_clear_keys);
+	//FREE(ui_state.overview_clear_keys);
 }
 
 // create new GUI item structure 
@@ -161,36 +161,68 @@ UI_Shot_Meta * ui_check_shot_meta(size_t shot_id)
 	return (UI_Shot_Meta *)shots.data[shot_id].ui;
 }
 
-// initialize GUI library
-bool ui_library_initialization()
+// create new GUI item structure for vertices
+/*UI_Meta * ui_check_vertex_meta(size_t vertex_id) 
 {
-	const int width = 1024, height = 732; 
+	// check if this vertex already has meta structure
+	ASSERT(validate_vertex(vertex_id), "invalid vertex supplied when checking for meta structure");
+	if (!vertices.data[vertex_id].ui)
+	{
+		vertices.data[vertex_id].ui = ui_create_meta(UI_ITEM_VERTEX, vertex_id);
+	}
+
+	return (UI_Meta *)vertices.data[vertex_id].ui;
+}*/
+
+// initialize Agar GUI library
+bool ui_agar_initialization()
+{
+	const int width = 1160, height = 800; 
 
 	gui_initialize();
+	gui_helper_initialize_sdl(width, height);
+	gui_helper_initialize_opengl();
+	gui_helper_opengl_adjust_size(width, height);
+	//SDL_WM_SetCaption("insight3d", NULL);
 	gui_set_size(width, height);
-	gui_set_title("insight3d");
 
 	return true; 
+
+	// T
+	// initialize 
+	/*if (AG_InitCore("insight3d - opensource image based 3d modeling software", 0) == -1)
+	{
+		fprintf(stderr, "%s\n", AG_GetError());
+		core_state.error = CORE_ERROR_GUI_INITIALIZATION;
+		return false;
+	}
+
+	if (AG_InitVideo(800, 600, 32, AG_VIDEO_OPENGL_OR_SDL | AG_VIDEO_RESIZABLE) == -1) 
+	{
+		fprintf(stderr, "%s\n", AG_GetError());
+		core_state.error = CORE_ERROR_GUI_INITIALIZATION;
+		return false;
+	}
+
+	AG_SetRefreshRate(30);
+	// agColors[WINDOW_BG_COLOR] = sdl_map_rgb_vector(agVideoFmt, UI_STYLE_BACKGROUND);
+
+	return true; // ui_icons_initialize();*/
 }
 
 // OpenGL settings 
-// note is this still needed? 
 bool ui_opengl_initialization()
 {
-	LOCK_RW(opengl)
-	{
-		glShadeModel(GL_SMOOTH);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_LINE_SMOOTH);
-		glDisable(GL_POLYGON_SMOOTH);
-		glDisable(GL_POINT_SMOOTH);
-		glDisable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-		// glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	}
-	UNLOCK_RW(opengl);
+	glShadeModel(GL_SMOOTH);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LINE_SMOOTH);
+	glDisable(GL_POLYGON_SMOOTH);
+	glDisable(GL_POINT_SMOOTH);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	// glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 	return true; 
 }
@@ -241,13 +273,117 @@ bool ui_create_main_window()
 	// GUI_EVENT_HANDLER(ui_state.gl, mouseup) = ui_event_agar_button_up;
 	GUI_EVENT_HANDLER(ui_state.gl, unfocus) = ui_event_mouse_out;
 
+	// T
+	// create main window
+	/*AG_Window * & win = ui_state.window;
+	win = AG_WindowNew(AG_WINDOW_PLAIN);
+	AG_WindowSetPadding(win, 0, 0, 0, 0);
+	AG_WindowSetSpacing(win, 0);
+	AG_WindowSetGeometry(win, 0, 22, agView->w, agView->h - 22);
+	AG_WindowSetCaption(win, "Main window");
+	AG_WindowSetCloseAction(win, AG_WINDOW_HIDE);
+
+	// divide it into two parts
+	ui_state.pane = AG_PaneNew(win, AG_PANE_HORIZ, AG_PANE_EXPAND);
+	ui_state.div_tools = ui_state.pane->div[0];
+	ui_state.div_glview = ui_state.pane->div[1];
+
+	// divide the left part into yet another pair
+	ui_state.pane_tools = AG_PaneNew(ui_state.div_tools, AG_PANE_VERT, AG_PANE_EXPAND);
+	ui_state.div_selections = ui_state.pane_tools->div[0];
+	ui_state.div_tabs = ui_state.pane_tools->div[1];
+	ui_state.vbox_selections = AG_VBoxNew(ui_state.div_selections, AG_VBOX_VFILL | AG_VBOX_HFILL);
+	ui_state.vbox_tabs = AG_VBoxNew(ui_state.div_tabs, AG_VBOX_VFILL | AG_VBOX_HFILL | AG_VBOX_HOMOGENOUS);
+
+	// * selections *
+
+	// toolbar contains buttons which activate tools 
+	ui_state.div_toolbar = AG_VBoxNew(ui_state.vbox_selections, AG_VBOX_HFILL | AG_VBOX_HOMOGENOUS);
+
+	// list (actually a table) enables us to switch between views
+	ui_state.list = AG_TableNew(ui_state.vbox_selections, AG_TABLE_EXPAND | AG_TABLE_MULTI);
+	AG_TableAddCol(ui_state.list, "Filename", NULL, NULL);
+	AG_TableAddCol(ui_state.list, "Calib", "<***>", NULL);
+
+	// tabs contain settings for certain tools 
+	ui_state.tabs = AG_NotebookNew(ui_state.vbox_tabs, AG_NOTEBOOK_EXPAND);
+
+	// left panel 
+	// ui_treeview_initialize();
+	// ui_state.treeview = AG_TlistNewPolled(vbox, 0, ui_treeview_poll, NULL);
+	// AG_TlistSetChangedFn(ui_state.treeview, ui_treeview_changed, NULL);
+	// AG_TlistSizeHint(ui_state.treeview, "<88888 8888888>", 16);
+	
+	// right panel 
+	ui_state.glview = AG_GLViewNew(ui_state.div_glview, AG_GLVIEW_EXPAND);
+	unsigned int glview_flags = AGWIDGET(ui_state.glview)->flags;
+	// glview_flags = glview_flags & ~AG_WIDGET_FOCUSABLE;
+	glview_flags |= AG_WIDGET_UNFOCUSED_MOTION
+	AGWIDGET(ui_state.glview)->flags = glview_flags;
+	AG_GLViewDrawFn(ui_state.glview, ui_event_agar_redraw, NULL);
+	AG_GLViewMotionFn(ui_state.glview, ui_event_agar_motion, NULL); 
+	AG_GLViewButtondownFn(ui_state.glview, ui_event_agar_button_down, NULL);
+	AG_GLViewButtonupFn(ui_state.glview, ui_event_agar_button_up, NULL);
+
+	// add handles for processing unprocessed keydown events
+	AG_SetEvent(ui_state.glview, "window-keydown", ui_event_key_down, NULL);
+	AG_SetEvent(ui_state.glview, "window-keyup", ui_event_key_up, NULL);*/
+
 	return true;
 }
 
 // create main application menu
 bool ui_create_menu()
 {
-	tools_state.application_menu = ui_state.top;
+	// T
+	// pointers to menu structures 
+	GUI_Panel * & application_menu = tools_state.application_menu; 
+
+	// main menu container 
+	application_menu = ui_state.top;
+
+	/*
+	// submenu "edit"
+	menu_item = AG_MenuNode(application_menu->root, "Edit", NULL);
+	AG_MenuItem * submenu_item = AG_MenuAction(menu_item, "Mode", NULL, NULL, NULL);
+	AG_MenuAction(submenu_item, "Overview mode", NULL, ui_event_menu_mode_overview, NULL);
+	AG_MenuAction(submenu_item, "Inspection mode", NULL, ui_event_menu_mode_inspection, NULL);
+	AG_MenuAction(submenu_item, "Shot mode", NULL, ui_event_menu_mode_shot, NULL);
+	AG_MenuSeparator(menu_item); 
+	// AG_MenuAction(menu_item, "Select all", NULL, ui_event_menu_select_all, NULL);
+	submenu_item = AG_MenuAction(menu_item, "Select", NULL, NULL, NULL); 
+	AG_MenuAction(submenu_item, "Points on current shot", NULL, ui_event_menu_select_points_on_current_shot, NULL);
+	AG_MenuAction(submenu_item, "All points", NULL, ui_event_menu_select_all_points, NULL);
+	AG_MenuAction(submenu_item, "Points with reconstructed vertices", NULL, ui_event_menu_select_points_with_reconstructed_vertices, NULL);
+	AG_MenuAction(submenu_item, "Points sharing vertex with currently selected points", NULL, ui_event_menu_select_points_sharing_vertex, NULL);
+	AG_MenuAction(menu_item, "Deselect all", NULL, ui_event_menu_deselect_all, NULL); 
+	AG_MenuSeparator(menu_item);
+	AG_MenuAction(menu_item, "Erase selected points", NULL, ui_event_menu_erase_selected_points, NULL);
+	AG_MenuAction(menu_item, "Erase current polygon", NULL, ui_event_menu_erase_current_polygon, NULL);
+	submenu_item = AG_MenuAction(menu_item, "Erase (more)", NULL, NULL, NULL); 
+	AG_MenuAction(submenu_item, "All vertices and points", NULL, ui_event_menu_erase_all_points_and_vertices, NULL);
+	// AG_MenuSeparator(menu_item); 
+	// AG_MenuAction(submenu_item, "Erase all", NULL, ui_event_menu_erase_all, NULL);
+
+	// submenu "reconstruction"
+	/*menu_item = AG_MenuNode(application_menu->root, "Reconstruction", NULL);
+	AG_MenuAction(menu_item, "Triangulate vertices", NULL, ui_event_menu_triangulation, NULL);
+	AG_MenuAction(menu_item, "Camera resection", NULL, ui_event_menu_resection, NULL);
+	submenu_item = AG_MenuAction(menu_item, "Camera resection (more)", NULL, NULL, NULL); 
+	AG_MenuAction(submenu_item, "All uncalibrated cameras satisfying lattice test", NULL, ui_event_menu_resection_all_lattice, NULL);
+	AG_MenuAction(submenu_item, "All uncalibrated cameras with enough known points", NULL, ui_event_menu_resection_all_enough, NULL);
+	AG_MenuAction(submenu_item, "All uncalibrated cameras", NULL, ui_event_menu_resection_all_uncalibrated, NULL);
+	AG_MenuAction(submenu_item, "All cameras", NULL, ui_event_menu_resection_all, NULL);
+
+	// submenu "modelling"
+	menu_item = AG_MenuNode(application_menu->root, "Modelling", NULL); 
+	AG_MenuAction(menu_item, "Define coordinate frame", NULL, ui_event_menu_coordinate_frame, NULL);
+	AG_MenuAction(menu_item, "Find major plane", NULL, NULL, NULL);
+	AG_MenuAction(menu_item, "Deform image into pinhole camera", NULL, ui_event_menu_pinhole_deform, NULL);
+
+	// submenu "windows"
+	menu_item = AG_MenuNode(application_menu->root, "Windows", NULL);
+	AG_MenuAction(menu_item, "OpenGL layer", NULL, ui_event_menu_opengl_layer, NULL);*/
 
 	return true;
 }
@@ -290,6 +426,23 @@ bool ui_register_tools()
 // finalize GUI creation 
 bool ui_done()
 {
+	// go through all parameters of all tools and fill in the defaults (for enum parameters) 
+	for (size_t i = 0; i < tools_state.count; i++) 
+	{
+		for ALL(tools_state.tools[i].parameters, j) 
+		{
+			const Tool_Parameter * const parameter = tools_state.tools[i].parameters.data + j; 
+
+			// we care only about enum parameters 
+			if (parameter->type == TOOL_PARAMETER_ENUM)
+			{
+				int new_select = 1; 
+				int * sel = &new_select;
+				// AG_PostEvent(NULL, parameter->enum_widget, "radio-changed", "i", 1);
+			}
+		}
+	}
+
 	// activate first tool 
 	if (tools_state.tools[0].begin) 
 	{
@@ -302,15 +455,17 @@ bool ui_done()
 // create gui structures and initialize 
 bool ui_create()
 {
-	bool state =  
+	return 
+		ui_agar_initialization() &&
+		ui_opengl_initialization() && 
+		ui_create_file_dialogs() &&
+		ui_create_dialogs() &&
 		ui_create_main_window() && 
 		ui_create_menu() && 
 		ui_context_initialize() &&
 		ui_register_tools() &&
 		ui_done()
 	;
-
-	return state;
 }
 
 /*// get viewport width and height in shot pixels 

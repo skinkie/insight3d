@@ -25,7 +25,19 @@
 
 #include "interface_opencv.h"
 
-pthread_mutex_t opencv_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static pthread_mutex_t opencv_lock = PTHREAD_MUTEX_INITIALIZER;
+
+// thread safety 
+void opencv_begin()
+{
+	pthread_mutex_lock(&opencv_lock);
+}
+
+// thread safety
+void opencv_end()
+{
+	pthread_mutex_unlock(&opencv_lock);
+}
 
 // create double precision matrix filled with zeros
 CvMat * opencv_create_matrix(const size_t rows, const size_t cols) 

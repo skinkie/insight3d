@@ -35,7 +35,6 @@ void tool_coordinates_create()
 }
 
 // rotate the world-space so that the coordinate frame is orientet in the same direction as current camera 
-// obtains LOCK_RW
 void coordinates_reorient_using_current_camera()
 {
 	if (INDEX_IS_SET(ui_state.current_shot) && shots.data[ui_state.current_shot].calibrated)
@@ -50,32 +49,27 @@ bool coordinates_rotate_all_cameras(size_t shot_id)
 {
 	ASSERT(validate_shot(shot_id), "invalid shot supplied when transforming calibration into camera's coordinate frame"); 
 	const Shot * const shot = shots.data + shot_id; 
-	CvMat * H; 
 
-	LOCK_RW(opencv)
+	opencv_begin();
+	CvMat * H = cvCreateMat(4, 4, CV_64F), * I = cvCreateMat(4, 4, CV_64F);
+	cvZero(I);
+	cvZero(H); 
+
+	OPENCV_ELEM(I, 0, 0) = -1;
+	OPENCV_ELEM(I, 1, 1) = 1;
+	OPENCV_ELEM(I, 2, 2) = 1;
+	OPENCV_ELEM(I, 3, 3) = 1;
+	OPENCV_ELEM(H, 3, 3) = 1;
+	for (int i = 0; i < 3; i++)
 	{
-		H = cvCreateMat(4, 4, CV_64F); 
-		CvMat * I = cvCreateMat(4, 4, CV_64F);
-		cvZero(I);
-		cvZero(H); 
-
-		OPENCV_ELEM(I, 0, 0) = -1;
-		OPENCV_ELEM(I, 1, 1) = 1;
-		OPENCV_ELEM(I, 2, 2) = 1;
-		OPENCV_ELEM(I, 3, 3) = 1;
-		OPENCV_ELEM(H, 3, 3) = 1;
-		for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
 		{
-			for (int j = 0; j < 3; j++)
-			{
-				OPENCV_ELEM(H, i, j) = OPENCV_ELEM(shot->rotation, j, i);
-			}
+			OPENCV_ELEM(H, i, j) = OPENCV_ELEM(shot->rotation, j, i);
 		}
-
-		cvMatMul(H, I, H);
-		cvReleaseMat(&I);
 	}
-	UNLOCK_RW(opencv);
+	opencv_end();
+	cvMatMul(H, I, H);
+	cvReleaseMat(&I);
 
 	printf("Coordinate frame aligned with camera.\n");
 
@@ -93,8 +87,10 @@ bool coordinates_apply_homography_to_cameras(CvMat * H)
 		if (!shot->calibrated) continue;
 
 		// multiply the projection matrix 
-		ATOMIC_RW(opencv, cvMatMul(shot->projection, H, shot->projection); );
-		
+		opencv_begin();
+		cvMatMul(shot->projection, H, shot->projection);
+		opencv_end();
+
 		// we need to decompose projection matrix to remain consistent 
 		geometry_calibration_from_P(i);
 	}

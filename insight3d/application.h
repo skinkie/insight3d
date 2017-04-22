@@ -27,12 +27,10 @@
 
 #include "geometry_structures.h"
 #include "core_image_loader.h"
-#include "gui.h"
 #include "ui_core.h"
 #include "ui_visualization.h"
 
-extern bool mousealreadydown;
-extern double delta_time; // time elapsed since last frame rendering\
+extern double delta_time; // time elapsed since last frame rendering
 
 // initialize debuging (at this point simply prints out some info about 
 // application data structures)

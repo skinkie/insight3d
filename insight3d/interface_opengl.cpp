@@ -24,8 +24,6 @@
 
 #include "interface_opengl.h"
 
-pthread_mutex_t opengl_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-
 // go to 2d mode 
 void opengl_2d_mode(double x1, double y1, double x2, double y2)
 {

@@ -28,251 +28,194 @@
 void ui_event_redraw()
 {
 	static double angle = 0; // debug
-	static int frame_count = 0;
-	frame_count++;
 
 	// OpenGL settings 
-	ATOMIC(opengl, opengl_push_attribs(); );
+	opengl_push_attribs();
 
-	// if (pthread_mutex_trylock(&geometry_mutex) == 0)
+	// which mode we're in? 
+	switch (ui_state.mode)
 	{
-		LOCK(tools);
+		// overview mode
+		case UI_MODE_OVERVIEW: 
 
-		if (tools_state.progressbar_show == false) 
-		{
-			UNLOCK(tools);
-			LOCK(geometry);
-			LOCK(opengl);
+			// init opengl 
+			visualization_prepare_inspection_projection(45);
 
-			// which mode we're in? 
-			switch (ui_state.mode)
+			// place user camera
+			angle += min_value(delta_time / 20, 20);
+			if (angle >= 720.0) angle -= 720.0;
+			glTranslated(0, 0, -3.2);
+			glRotated(angle / 2 + 140, 0, 1, 0);
+
+			// visualize data
+			visualization_cameras(shots, 0.5); 
+			visualization_vertices(vertices, 0.5);
+			visualization_polygons(polygons, 0.5);
+			visualization_helper_cube();
+
+		break; 
+
+		// inspection mode
+		case UI_MODE_INSPECTION:
+
+			// init opengl
+			visualization_prepare_inspection_projection(45);
+
+			// place user camera
+			visualization_inspection_user_camera();
+
+			// visualize data
+			visualization_vertices(vertices);
+			visualization_cameras(shots);
+			// visualization_contours(shots, vertices); // specific (more or less)
+			visualization_polygons(polygons);
+
+		break;
+
+		// shot mode
+		case UI_MODE_SHOT:
+
+			// if there is no current photo, we don't have anything to do
+			if (!INDEX_IS_SET(ui_state.current_shot)) break; 
+			ASSERT(validate_shot(ui_state.current_shot), "invalid shot set as current");
+
+			// load the image if needed
+			// visualization_prepare_image(shots.data[ui_state.current_shot]);
+
+			// request image 
+			if (!image_loader_nonempty_handle(shots.data[ui_state.current_shot].image_loader_request))
 			{
-				// overview mode
-				case UI_MODE_OVERVIEW: 
+				shots.data[ui_state.current_shot].image_loader_request = image_loader_new_request(
+					ui_state.current_shot, 
+					shots.data[ui_state.current_shot].image_filename, 
+					IMAGE_LOADER_CONTINUOUS_LOADING
+				);
+			}
 
-					// init opengl 
-					visualization_prepare_inspection_projection(45);
+			image_loader_upload_to_opengl(shots.data[ui_state.current_shot].image_loader_request);
 
-					// place user camera
-					LOCK(opengl)
+			// initialize projection compatible with this view
+			visualization_prepare_projection();
+
+			// show image
+			visualization_prepare_planar_drawing();
+			visualization_shot_image(shots.data[ui_state.current_shot]);
+			visualization_shot_polygons(ui_state.current_shot);
+
+			// if meta info about this image is loaded and display widget has positive size, we can display geometry 
+			if (shots.data[ui_state.current_shot].info_status >= GEOMETRY_INFO_DEDUCED && gui_get_width(ui_state.gl) > 0 && gui_get_height(ui_state.gl) > 0)
+			{
+				// if dualview is enabled and 2 shots are selected, show it
+				bool dualview_displayed = false;
+				size_t selected[2], selected_count; 
+				// selected_count = ui_selected_shots_n(selected, 2);
+				// if (INDEX_IS_SET(ui_state.current_shot) 
+
+				// select current shot and the next one 
+				selected[0] = ui_state.current_shot; 
+				size_t next_shot = (selected[0] + 1) % shots.count;
+				while (next_shot != selected[0]) 
+				{
+					if (IS_SET(shots, next_shot)) 
 					{
-						angle += 0.7; //min_value(delta_time / 20, 20);
-						if (angle >= 720.0) angle -= 720.0;
-						glTranslated(0, 0, -3.2);
-						glRotated(angle / 2 + 140, 0, 1, 0);
-					}
-					UNLOCK(opengl);
-
-					// visualize data
-					visualization_cameras(shots, 0.5); 
-					visualization_vertices(vertices, 0.5);
-					visualization_polygons(polygons, 0.5);
-					visualization_helper_cube();
-
-				break; 
-
-				// inspection mode
-				case UI_MODE_INSPECTION:
-
-					// init opengl
-					visualization_prepare_inspection_projection(45);
-
-					// place user camera
-					visualization_inspection_user_camera();
-
-					// visualize data
-					visualization_vertices(vertices);
-					visualization_cameras(shots);
-					// visualization_contours(shots, vertices); // specific (more or less)
-					visualization_polygons(polygons);
-
-				break;
-
-				// shot mode
-				case UI_MODE_SHOT:
-
-					// if there is no current photo, we don't have anything to do
-					if (!INDEX_IS_SET(ui_state.current_shot)) break; 
-					ASSERT(validate_shot(ui_state.current_shot), "invalid shot set as current");
-
-					// load the image if needed
-					// visualization_prepare_image(shots.data[ui_state.current_shot]);
-
-					// request image 
-					if (!image_loader_nonempty_handle(shots.data[ui_state.current_shot].image_loader_request))
-					{
-						shots.data[ui_state.current_shot].image_loader_request = image_loader_new_request(
-							ui_state.current_shot, 
-							shots.data[ui_state.current_shot].image_filename, 
-							IMAGE_LOADER_CONTINUOUS_LOADING
-						);
+						selected[1] = next_shot; 
+						selected_count = 2;
+						break;
 					}
 
-					UNLOCK(opengl)
+					next_shot = (next_shot + 1) % shots.count;
+				}
+
+				// printf(next_shot_set ? "true\n" : "false\n");
+				
+				if (option_show_dualview && selected_count > 0 && (selected[0] != ui_state.current_shot || selected_count == 2))
+				{
+					if (selected[0] == ui_state.current_shot)
 					{
-						image_loader_upload_to_opengl(shots.data[ui_state.current_shot].image_loader_request);
+						swap_size_t(selected[0], selected[1]);
 					}
-					LOCK(opengl);
 
-					// initialize projection compatible with this view
-					visualization_prepare_projection();
-
-					// show image
-					visualization_prepare_planar_drawing();
-					UNLOCK(opengl)
-					{
-						visualization_shot_image(shots.data[ui_state.current_shot]);
-					}
-					LOCK(opengl); 
-					visualization_shot_polygons(ui_state.current_shot);
-
-					// if meta info about this image is loaded and display widget has positive size, we can display geometry 
-					if (shots.data[ui_state.current_shot].info_status >= GEOMETRY_INFO_DEDUCED && gui_get_width(ui_state.gl) > 0 && gui_get_height(ui_state.gl) > 0)
-					{
-						// if dualview is enabled and 2 shots are selected, show it
-						bool dualview_displayed = false;
-						size_t selected[2], selected_count; 
-						// selected_count = ui_selected_shots_n(selected, 2);
-						// if (INDEX_IS_SET(ui_state.current_shot) 
-
-						// select current shot and the next one 
-						selected[0] = ui_state.current_shot; 
-						size_t next_shot = (selected[0] + 1) % shots.count;
-						while (next_shot != selected[0]) 
-						{
-							if (IS_SET(shots, next_shot)) 
-							{
-								selected[1] = next_shot; 
-								selected_count = 2;
-								break;
-							}
-
-							next_shot = (next_shot + 1) % shots.count;
-						}
-
-						// printf(next_shot_set ? "true\n" : "false\n");
-						
-						if (option_show_dualview && selected_count > 0 && (selected[0] != ui_state.current_shot || selected_count == 2))
-						{
-							if (selected[0] == ui_state.current_shot)
-							{
-								swap_size_t(selected[0], selected[1]);
-							}
-
-							// release previous dualview
-							if (INDEX_IS_SET(ui_state.dualview) && ui_state.dualview != selected[0])
-							{
-								ui_release_dualview();
-							}
-
-							// set dualview of new shot and send request for it's image
-							if (!INDEX_IS_SET(ui_state.dualview)) 
-							{
-								INDEX_SET(ui_state.dualview, selected[0]);
-								shots.data[selected[0]].image_loader_request = image_loader_new_request(
-									selected[0], shots.data[selected[0]].image_filename, IMAGE_LOADER_CONTINUOUS_LOADING
-								);
-							}
-							
-							// show it
-							image_loader_upload_to_opengl(shots.data[selected[0]].image_loader_request);
-							dualview_displayed = true;
-							visualization_show_dualview(ui_state.current_shot, selected[0], ui_state.tool_x, ui_state.tool_y);
-						}
-						else 
-						{
-							ui_release_dualview();
-						}
-
-						// visualization_shot_polygons(ui_state.current_shot);
-						if (!dualview_displayed) 
-						{
-							visualization_shot_points(); // note this function can render only current shot, because other shots have undefined focused point and selected points...
-							/*if (INDEX_IS_SET(ui_state.focused_point))
-							{
-								ui_epipolars_display(ui_state.current_shot, ui_state.focused_point);
-							}*/
-							if (ui_state.mouse_over) ui_context_display(ui_state.tool_x, ui_state.tool_y);
-						}
-					}
-					else
+					// release previous dualview
+					if (INDEX_IS_SET(ui_state.dualview) && ui_state.dualview != selected[0])
 					{
 						ui_release_dualview();
 					}
 
-					if (ui_state.mouse_down && !ui_state.mouse_no_dragging && ui_state.mouse_button == SDL_BUTTON_RIGHT)
+					// set dualview of new shot and send request for it's image
+					if (!INDEX_IS_SET(ui_state.dualview)) 
 					{
-						ui_selection_box();
+						INDEX_SET(ui_state.dualview, selected[0]);
+						shots.data[selected[0]].image_loader_request = image_loader_new_request(
+							selected[0], shots.data[selected[0]].image_filename, IMAGE_LOADER_CONTINUOUS_LOADING
+						);
 					}
-
-					visualization_end_planar_drawing();
-
-					// place the user camera into the same position as current camera
-					visualization_shot_user_camera();
-					// now we can draw some 3d visualization (if we'd want)
-					// visualization_vertices(vertices, 1);
 					
-				break; 
-
-				// calculation
-				case UI_MODE_CALCULATION: 
-
-					// note that this mode probably won't ever be used
-
-				break; 
-			}
-
-			// display visualizations common for all modes 
-			if (INDEX_IS_SET(ui_state.current_shot))
-			{
-				if (ui_state.mouse_down && (
-						ui_state.mode == UI_MODE_SHOT && ui_state.mouse_button == SDL_BUTTON_RIGHT /*|| 
-						ui_state.mode == UI_MODE_INSPECTION && ui_state.mouse_button == SDL_BUTTON_LEFT*/
-					)
-				)
+					// show it
+					image_loader_upload_to_opengl(shots.data[selected[0]].image_loader_request);
+					dualview_displayed = true;
+					visualization_show_dualview(ui_state.current_shot, selected[0], ui_state.tool_x, ui_state.tool_y);
+				}
+				else 
 				{
-					// draw selection box 
-					visualization_prepare_planar_drawing();
-					ui_selection_box();
-					visualization_end_planar_drawing();
+					ui_release_dualview();
+				}
+
+				// visualization_shot_polygons(ui_state.current_shot);
+				if (!dualview_displayed) 
+				{
+					visualization_shot_points(); // note this function can render only current shot, because other shots have undefined focused point and selected points...
+					/*if (INDEX_IS_SET(ui_state.focused_point))
+					{
+						ui_epipolars_display(ui_state.current_shot, ui_state.focused_point);
+					}*/
+					if (ui_state.mouse_over) ui_context_display(ui_state.tool_x, ui_state.tool_y);
 				}
 			}
+			else
+			{
+				ui_release_dualview();
+			}
 
-			UNLOCK(opengl);
-			UNLOCK(geometry);
-		}
-		else
-		{
-			LOCK(opengl); 
+			if (ui_state.mouse_down && !ui_state.mouse_no_dragging && ui_state.mouse_button == SDL_BUTTON_RIGHT)
+			{
+				ui_selection_box();
+			}
 
-			glBegin(GL_POLYGON);
-				glColor3f(0.2, 0.2, 0.2);
+			visualization_end_planar_drawing();
 
-				glVertex3f(-0.3, -0.07, 0);
-				glVertex3f(0.3, -0.07, 0);
-				glVertex3f(0.3, 0.07, 0);
-				glVertex3f(-0.3, 0.07, 0);
-			glEnd();
+			// place the user camera into the same position as current camera
+			visualization_shot_user_camera();
+			// now we can draw some 3d visualization (if we'd want)
+			// visualization_vertices(vertices, 1);
+			
+		break; 
 
-			const double border = 0.01;
-			const double opacity = 0.1 * sin(frame_count / 50.0);
-			glBegin(GL_POLYGON);
-				glColor3f(0.4 + opacity, 0.4 + opacity, 0.4 + opacity);
-				glVertex3f(-0.3 + border, 0.07 - border, 0);
-				glVertex3f(-0.3 + border, -0.07 + border, 0);
-				glVertex3f(-0.3 + tools_state.progressbar_percentage * (0.6 - 3 * border) + 2 * border, -0.07 + border, 0);
-				glVertex3f(-0.3 + tools_state.progressbar_percentage * (0.6 - 3 * border) + 2 * border, 0.07 - border, 0);
-			glEnd();
+		// calculation
+		case UI_MODE_CALCULATION: 
 
-			UNLOCK(opengl);
-			UNLOCK(tools);
-		}
+			// todo probably some progress bar
 
-		// restore OpenGL settings
-		glPopAttrib();
-
-		UNLOCK(opengl);
+		break; 
 	}
+
+	// display visualizations common for all modes 
+	if (INDEX_IS_SET(ui_state.current_shot))
+	{
+		if (ui_state.mouse_down && (
+				ui_state.mode == UI_MODE_SHOT && ui_state.mouse_button == SDL_BUTTON_RIGHT /*|| 
+				ui_state.mode == UI_MODE_INSPECTION && ui_state.mouse_button == SDL_BUTTON_LEFT*/
+			)
+		)
+		{
+			// draw selection box 
+			visualization_prepare_planar_drawing();
+			ui_selection_box();
+			visualization_end_planar_drawing();
+		}
+	}
+
+	// restore OpenGL settings
+	glPopAttrib();
 }
 
 // dispatch mouse button down events
@@ -316,7 +259,7 @@ void ui_event_mouse_button_down(Uint8 button, Uint16 x, Uint16 y)
 }
 
 // event translation 
-void ui_event_agar_button_down(const GUI_Event_Descriptor event)
+void ui_event_agar_button_down(GUI_Panel * event)
 {
 	// T
 	/*AG_Widget * const widget = (AG_Widget *)AG_SELF();
@@ -329,8 +272,8 @@ void ui_event_agar_button_down(const GUI_Event_Descriptor event)
 	}*/
 
 	const int 
-		x = event.sdl_event.button.x, 
-		y = event.sdl_event.button.y
+		x = gui_context.event->button.x, 
+		y = gui_context.event->button.y
 	;
 
 	if (inside_2d_interval(
@@ -340,7 +283,7 @@ void ui_event_agar_button_down(const GUI_Event_Descriptor event)
 	))
 	{
 		ui_event_mouse_button_down(
-			event.sdl_event.button.button, 
+			gui_context.event->button.button, 
 			x - ui_state.gl->effective_x1, 
 			y - ui_state.gl->effective_y1
 		);
@@ -395,7 +338,7 @@ void ui_event_mouse_move(Uint16 x, Uint16 y)
 }
 
 // event translation 
-void ui_event_agar_motion(const GUI_Event_Descriptor event)
+void ui_event_agar_motion(GUI_Panel * event)
 {
 	// T
 	/*AG_Widget * const widget = (AG_Widget *)AG_SELF(); 
@@ -421,15 +364,15 @@ void ui_event_agar_motion(const GUI_Event_Descriptor event)
 	}*/
 
 	const int 
-		x = event.sdl_event.motion.x, 
-		y = event.sdl_event.motion.y
+		x = gui_context.event->motion.x, 
+		y = gui_context.event->motion.y
 	;
 
 	ui_state.mouse_over = true; 
 	ui_event_mouse_move(x - ui_state.gl->effective_x1, y - ui_state.gl->effective_y1);
 }
 
-void ui_event_mouse_out(const GUI_Event_Descriptor event)
+void ui_event_mouse_out(GUI_Panel * event)
 {
 	ui_state.mouse_over = false;
 }
@@ -520,7 +463,7 @@ void ui_event_mouse_button_up(Uint8 button, Uint16 x, Uint16 y)
 }
 
 // event translation 
-void ui_event_agar_button_up(const SDL_Event * const event)
+void ui_event_agar_button_up() 
 {
 	// T
 	/*AG_Widget * const widget = (AG_Widget *)AG_SELF(); 
@@ -533,8 +476,8 @@ void ui_event_agar_button_up(const SDL_Event * const event)
 	}*/
 
 	const int 
-		x = event->button.x, 
-		y = event->button.y
+		x = gui_context.event->button.x, 
+		y = gui_context.event->button.y
 	;
 
 	// removed to prevent the mousedown state from handing when 
@@ -547,7 +490,7 @@ void ui_event_agar_button_up(const SDL_Event * const event)
 	))
 	{*/
 		ui_event_mouse_button_up(
-			event->button.button,
+			gui_context.event->button.button,
 			x - ui_state.gl->effective_x1, 
 			y - ui_state.gl->effective_y1
 		);

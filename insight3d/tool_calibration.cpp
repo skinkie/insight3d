@@ -43,10 +43,10 @@ const size_t
 static size_t tool_calibration_id;
 
 // forward declarations
-void calibration_bundle(const double measurement_error);
+void calibration_bundle();
 void calibration_triangulate_vertices(
 	const size_t calibration_id, const double measurement_threshold, const int min_inliers,
-	const bool normalize_data, const bool normalize_A, const int shot_id = -1
+	const bool normalize_data, const bool normalize_A
 );
 void calibration_rectify(bool affine = false);
 
@@ -59,7 +59,7 @@ void calibration_refresh_flag(size_t calibration_id)
 }
 
 // refresh lists in UI containing information modified by this tool
-void calibration_refresh_UI()
+void tool_calibration_refresh_UI()
 {
 	calibration_refresh_flag(ui_state.current_calibration);
 	ui_list_update();
@@ -98,16 +98,13 @@ void tool_calibration_create()
 	tool_create_button("Add view(s) by resection", tool_calibration_add_views);
 	tool_create_button("Triangulate vertices", tool_calibration_triangulate);
 	tool_create_button("Optimize calibration", tool_calibration_bundle);
-	tool_create_button("Test rectification", tool_calibration_test_rectification);
-	tool_create_button("Print calibration", tool_calibration_print);
 	tool_create_button("Use calibration", tool_calibration_use);
 
 	tool_create_separator();
 	tool_create_button("Add views and refine", tool_calibration_refine);
 	tool_create_button("Refine (strict)", tool_calibration_refine_strict);
-	tool_create_button("Metric reconstruction", tool_calibration_metric);
-	tool_create_button("Affine reconstruction", tool_calibration_affine);
-	
+	// tool_create_button("Metric reconstruction", tool_calibration_metric);
+
 	tool_create_separator();
 	// tool_create_button("Triangulate vertices (only trusted)", tool_calibration_triangulate_trusted);
 	tool_create_button("Clear shots' calibration", tool_calibration_clear);
@@ -136,7 +133,7 @@ void tool_calibration_next()
 	if (id < calibrations.count) 
 	{
 		INDEX_SET(ui_state.current_calibration, id);
-		calibration_refresh_UI();
+		tool_calibration_refresh_UI();
 	}
 }
 
@@ -158,7 +155,7 @@ void tool_calibration_prev()
 	if (id >= 0) 
 	{
 		INDEX_SET(ui_state.current_calibration, (size_t)id);
-		calibration_refresh_UI();
+		tool_calibration_refresh_UI();
 	}
 	else
 	{
@@ -260,16 +257,12 @@ bool calibration_pair(
 	ASSERT(points1->cols == points2->cols, "sizes of matrices containing correspondences do not match");
 
 	// compute F
-	ATOMIC_RW(opencv, 
-		CvMat * F = opencv_create_matrix(3, 3); CvMat * status = cvCreateMat(1, points1->cols, CV_8S);
-	);
+	CvMat * F = opencv_create_matrix(3, 3), * status = cvCreateMat(1, points1->cols, CV_8UC1);
 
 	if (!cvFindFundamentalMat(points1, points2, F, CV_FM_RANSAC, epipolar_distance_threshold, 0.999, status))
 	{
 		printf("Fundamental matrix couldn't be estimated.\n");
-		ATOMIC_RW(opencv, 
-			cvReleaseMat(&F); cvReleaseMat(&status); cvReleaseMat(&points1); cvReleaseMat(&points2); 
-		);
+		cvReleaseMat(&F); cvReleaseMat(&status); cvReleaseMat(&points1); cvReleaseMat(&points2); 
 		FREE(points1_indices); FREE(points2_indices);
 		return false;
 	}
@@ -386,149 +379,50 @@ bool calibration_pair(
 	}*/
 
 	// normalize
-	LOCK_RW(opencv)
+	CvMat * H_normalization1, * H_normalization2, * H_normalization1_inv, * H_normalization2_inv, * F_prime;
+	if (normalize_data)
 	{
-		CvMat * H_normalization1, * H_normalization2, * H_normalization1_inv, * H_normalization2_inv, * F_prime;
-		if (normalize_data)
+		H_normalization1 = opencv_create_matrix(3, 3); 
+		H_normalization2 = opencv_create_matrix(3, 3); 
+		H_normalization1_inv = opencv_create_matrix(3, 3); 
+		H_normalization2_inv = opencv_create_matrix(3, 3); 
+		if (!H_normalization1 || !H_normalization2 || !H_normalization1_inv || !H_normalization2_inv) 
 		{
-			H_normalization1 = opencv_create_matrix(3, 3); 
-			H_normalization2 = opencv_create_matrix(3, 3); 
-			H_normalization1_inv = opencv_create_matrix(3, 3); 
-			H_normalization2_inv = opencv_create_matrix(3, 3); 
-			if (!H_normalization1 || !H_normalization2 || !H_normalization1_inv || !H_normalization2_inv) 
-			{
-				cvReleaseMat(&F); cvReleaseMat(&status); cvReleaseMat(&points1); cvReleaseMat(&points2); 
-				FREE(points1_indices); FREE(points2_indices);
-				if (H_normalization1) cvReleaseMat(&H_normalization1);
-				if (H_normalization2) cvReleaseMat(&H_normalization2);
-				if (H_normalization1_inv) cvReleaseMat(&H_normalization1_inv);
-				if (H_normalization2_inv) cvReleaseMat(&H_normalization2_inv);
-
-				UNLOCK_RW(opencv);
-				return false;
-			}
-
-			mvg_normalize_points(points1, H_normalization1);
-			mvg_normalize_points(points2, H_normalization2);
-			cvInvert(H_normalization1, H_normalization1_inv, CV_SVD);
-			cvInvert(H_normalization2, H_normalization2_inv, CV_SVD);
-
-			// apply normalization to F
-			F_prime = opencv_create_matrix(3, 3);
-			CvMat * T = opencv_create_matrix(3, 3), * H_normalization2_inv_T = opencv_create_matrix(3, 3);
-			cvTranspose(H_normalization2_inv, H_normalization2_inv_T);
-			cvMatMul(F, H_normalization1_inv, T);
-			cvMatMul(H_normalization2_inv_T, T, F_prime);
-			cvReleaseMat(&T);
-			cvReleaseMat(&H_normalization2_inv_T);
-		}
-		else
-		{
-			F_prime = F;
-		}
-
-		// extract P_1, P_2 from F
-		CvMat * P1 = opencv_create_matrix(3, 4), * P2 = opencv_create_matrix(3, 4);
-		if (!mvg_extract_Ps_from_F(F_prime, P1, P2))
-		{
-			printf("Unable to extract camera calibration from fundamental matrix");
-			cvReleaseMat(&F_prime);
-			if (normalize_data)
-			{
-				cvReleaseMat(&H_normalization1);
-				cvReleaseMat(&H_normalization1_inv);
-				cvReleaseMat(&H_normalization2);
-				cvReleaseMat(&H_normalization2_inv);
-				cvReleaseMat(&F);
-			}
-			cvReleaseMat(&status);
-			cvReleaseMat(&points1);
-			cvReleaseMat(&points2);
-			cvReleaseMat(&P1);
-			cvReleaseMat(&P2);
-			FREE(points1_indices);
-			FREE(points2_indices);
-
-			UNLOCK_RW(opencv);
+			cvReleaseMat(&F); cvReleaseMat(&status); cvReleaseMat(&points1); cvReleaseMat(&points2); 
+			FREE(points1_indices); FREE(points2_indices);
+			if (H_normalization1) cvReleaseMat(&H_normalization1);
+			if (H_normalization2) cvReleaseMat(&H_normalization2);
+			if (H_normalization1_inv) cvReleaseMat(&H_normalization1_inv);
+			if (H_normalization2_inv) cvReleaseMat(&H_normalization2_inv);
 			return false;
 		}
 
-		/*opencv_debug("First camera matrix", P1);
-		opencv_debug("Second camera matrix", P2);*/
+		mvg_normalize_points(points1, H_normalization1);
+		mvg_normalize_points(points2, H_normalization2);
+		cvInvert(H_normalization1, H_normalization1_inv, CV_SVD);
+		cvInvert(H_normalization2, H_normalization2_inv, CV_SVD);
 
-		// create new calibration
-		ADD(calibrations); 
-		*calibration_id = LAST_INDEX(calibrations);
-		Calibration * const calibration = calibrations.data + *calibration_id;
-		DYN_INIT(calibration->Xs);
-		DYN_INIT(calibration->Ps);
+		// apply normalization to F
+		F_prime = opencv_create_matrix(3, 3);
+		CvMat * T = opencv_create_matrix(3, 3), * H_normalization2_inv_T = opencv_create_matrix(3, 3);
+		cvTranspose(H_normalization2_inv, H_normalization2_inv_T);
+		cvMatMul(F, H_normalization1_inv, T);
+		cvMatMul(H_normalization2_inv_T, T, F_prime);
+		cvReleaseMat(&T);
+		cvReleaseMat(&H_normalization2_inv_T);
+	}
+	else
+	{
+		F_prime = F;
+	}
 
-		// set it as selected 
-		INDEX_SET(ui_state.current_calibration, *calibration_id);
-
-		// reconstruct individual points
-		CvMat * projected_points = opencv_create_matrix(2, 2); 
-		const CvMat * Ps[2];
-		Ps[0] = P1;
-		Ps[1] = P2;
-		for (size_t i = 0; i < points1->cols; i++)
-		{
-			// triangulate only inliers 
-			if (CV_MAT_ELEM(*status, signed char, 0, i) == 0) continue;
-
-			ADD(calibration->Xs); 
-			Calibration_Vertex * const vertex = calibration->Xs.data + LAST_INDEX(calibration->Xs);
-			ASSERT(validate_point(shot_id1, points1_indices[i]), "invalid point encountered in triangulation code");
-			ASSERT(validate_point(shot_id2, points2_indices[i]), "invalid point encountered in triangulation code");
-			ASSERT(shots.data[shot_id1].points.data[points1_indices[i]].vertex == shots.data[shot_id2].points.data[points2_indices[i]].vertex, "inconsistent indexing of vertex");
-			vertex->vertex_id = shots.data[shot_id1].points.data[points1_indices[i]].vertex;
-
-			// fill the data in a matrix 
-			OPENCV_ELEM(projected_points, 0, 0) = OPENCV_ELEM(points1, 0, i); 
-			OPENCV_ELEM(projected_points, 1, 0) = OPENCV_ELEM(points1, 1, i); 
-			OPENCV_ELEM(projected_points, 0, 1) = OPENCV_ELEM(points2, 0, i); 
-			OPENCV_ELEM(projected_points, 1, 1) = OPENCV_ELEM(points2, 1, i); 
-
-			// call triangulation routine and save the result
-			vertex->X = mvg_triangulation_SVD(Ps, projected_points, normalize_A, 2);
-		}
-
-		// denormalize projection matrices
+	// extract P_1, P_2 from F
+	CvMat * P1 = opencv_create_matrix(3, 4), * P2 = opencv_create_matrix(3, 4);
+	if (!mvg_extract_Ps_from_F(F_prime, P1, P2))
+	{
+		printf("Unable to extract camera calibration from fundamental matrix");
+		cvReleaseMat(&F_prime);
 		if (normalize_data)
-		{
-			cvMatMul(H_normalization1_inv, P1, P1); 
-			cvMatMul(H_normalization2_inv, P2, P2);
-			cvReleaseMat(&H_normalization1);
-			cvReleaseMat(&H_normalization2);
-		}
-
-		// save first camera
-		ADD(calibration->Ps);
-		size_t P1_id = LAST_INDEX(calibration->Ps);
-		Calibration_Camera * const camera1 = calibration->Ps.data + P1_id;
-		camera1->P = P1;
-		camera1->shot_id = shot_id1;
-		DYN_INIT(camera1->Fs);
-		DYN_INIT(camera1->points_meta);
-
-		// save second camera
-		ADD(calibration->Ps);
-		size_t P2_id = LAST_INDEX(calibration->Ps);
-		Calibration_Camera * const camera2 = calibration->Ps.data + P2_id;
-		camera2->P = P2;
-		camera2->shot_id = shot_id2;
-		DYN_INIT(camera2->Fs);
-		DYN_INIT(camera2->points_meta);
-		/*ADD(camera2->Fs);
-		LAST(camera2->Fs).first_shot_id = shot_id1;
-		LAST(camera2->Fs).F_prime = F_prime;*/
-
-		// save current estimation of the set of inliers 
-		calibration_update_inliers(*calibration_id, P1_id, points1->cols, points1_indices, status);
-		calibration_update_inliers(*calibration_id, P2_id, points1->cols, points2_indices, status);
-
-		// release resources
-		if (normalize_data) 
 		{
 			cvReleaseMat(&H_normalization1);
 			cvReleaseMat(&H_normalization1_inv);
@@ -536,14 +430,105 @@ bool calibration_pair(
 			cvReleaseMat(&H_normalization2_inv);
 			cvReleaseMat(&F);
 		}
-		cvReleaseMat(&projected_points);
 		cvReleaseMat(&status);
-		cvReleaseMat(&points1); 
+		cvReleaseMat(&points1);
 		cvReleaseMat(&points2);
-		FREE(points1_indices); 
+		cvReleaseMat(&P1);
+		cvReleaseMat(&P2);
+		FREE(points1_indices);
 		FREE(points2_indices);
+		return false;
 	}
-	UNLOCK_RW(opencv);
+
+	/*opencv_debug("First camera matrix", P1);
+	opencv_debug("Second camera matrix", P2);*/
+
+	// create new calibration
+	ADD(calibrations); 
+	*calibration_id = LAST_INDEX(calibrations);
+	Calibration * const calibration = calibrations.data + *calibration_id;
+	DYN_INIT(calibration->Xs);
+	DYN_INIT(calibration->Ps);
+
+	// set it as selected 
+	INDEX_SET(ui_state.current_calibration, *calibration_id);
+
+	// reconstruct individual points
+	CvMat * projected_points = opencv_create_matrix(2, 2); 
+	const CvMat * Ps[2];
+	Ps[0] = P1;
+	Ps[1] = P2;
+	for (size_t i = 0; i < points1->cols; i++)
+	{
+		// triangulate only inliers 
+		if (CV_MAT_ELEM(*status, signed char, 0, i) == 0) continue;
+
+		ADD(calibration->Xs); 
+		Calibration_Vertex * const vertex = calibration->Xs.data + LAST_INDEX(calibration->Xs);
+		ASSERT(validate_point(shot_id1, points1_indices[i]), "invalid point encountered in triangulation code");
+		ASSERT(validate_point(shot_id2, points2_indices[i]), "invalid point encountered in triangulation code");
+		ASSERT(shots.data[shot_id1].points.data[points1_indices[i]].vertex == shots.data[shot_id2].points.data[points2_indices[i]].vertex, "inconsistent indexing of vertex");
+		vertex->vertex_id = shots.data[shot_id1].points.data[points1_indices[i]].vertex;
+
+		// fill the data in a matrix 
+		OPENCV_ELEM(projected_points, 0, 0) = OPENCV_ELEM(points1, 0, i); 
+		OPENCV_ELEM(projected_points, 1, 0) = OPENCV_ELEM(points1, 1, i); 
+		OPENCV_ELEM(projected_points, 0, 1) = OPENCV_ELEM(points2, 0, i); 
+		OPENCV_ELEM(projected_points, 1, 1) = OPENCV_ELEM(points2, 1, i); 
+
+		// call triangulation routine and save the result
+		vertex->X = mvg_triangulation_SVD(Ps, projected_points, normalize_A, 2);
+	}
+
+	// denormalize projection matrices
+	if (normalize_data)
+	{
+		cvMatMul(H_normalization1_inv, P1, P1); 
+		cvMatMul(H_normalization2_inv, P2, P2);
+		cvReleaseMat(&H_normalization1);
+		cvReleaseMat(&H_normalization2);
+	}
+
+	// save first camera
+	ADD(calibration->Ps);
+	size_t P1_id = LAST_INDEX(calibration->Ps);
+	Calibration_Camera * const camera1 = calibration->Ps.data + P1_id;
+	camera1->P = P1;
+	camera1->shot_id = shot_id1;
+	DYN_INIT(camera1->Fs);
+	DYN_INIT(camera1->points_meta);
+
+	// save second camera
+	ADD(calibration->Ps);
+	size_t P2_id = LAST_INDEX(calibration->Ps);
+	Calibration_Camera * const camera2 = calibration->Ps.data + P2_id;
+	camera2->P = P2;
+	camera2->shot_id = shot_id2;
+	DYN_INIT(camera2->Fs);
+	DYN_INIT(camera2->points_meta);
+	/*ADD(camera2->Fs);
+	LAST(camera2->Fs).first_shot_id = shot_id1;
+	LAST(camera2->Fs).F_prime = F_prime;*/
+
+	// save current estimation of the set of inliers 
+	calibration_update_inliers(*calibration_id, P1_id, points1->cols, points1_indices, status);
+	calibration_update_inliers(*calibration_id, P2_id, points1->cols, points2_indices, status);
+
+	// release resources
+	if (normalize_data) 
+	{
+		cvReleaseMat(&H_normalization1);
+		cvReleaseMat(&H_normalization1_inv);
+		cvReleaseMat(&H_normalization2);
+		cvReleaseMat(&H_normalization2_inv);
+		cvReleaseMat(&F);
+	}
+	cvReleaseMat(&projected_points);
+	cvReleaseMat(&status);
+	cvReleaseMat(&points1); 
+	cvReleaseMat(&points2);
+	FREE(points1_indices); 
+	FREE(points2_indices);
 
 	return true;
 }
@@ -579,23 +564,18 @@ void tool_calibration_pair()
 
 	// call routine to actually do all the work
 	size_t calibration_id;
-	
-	LOCK_RW(opencv)
+	opencv_begin();
+	if (!calibration_pair(shot_id1, shot_id2, normalize_data, normalize_A, epipolar_distance_threshold, &calibration_id))
 	{
-		if (!calibration_pair(shot_id1, shot_id2, normalize_data, normalize_A, epipolar_distance_threshold, &calibration_id))
-		{
-			printf("Failed to calibrate image pair.\n");
-	
-			UNLOCK_RW(opencv);
-			return;
-		}
+		printf("Failed to calibrate image pair.\n");
+		opencv_end();
+		return;
 	}
-	UNLOCK_RW(opencv);
 
 	// refresh UI
-	calibration_refresh_UI();
+	tool_calibration_refresh_UI();
 
-	return;
+	opencv_end();
 }
 
 // internal function used to calibrate given shot by resection
@@ -603,6 +583,7 @@ bool calibration_add_view(const size_t calibration_id, const size_t shot_id, con
 {
 	Shot * const shot = shots.data + shot_id;
 	Calibration * const calibration = calibrations.data + calibration_id;
+	opencv_begin(); 
 
 	// export data
 	CvMat * points = NULL, * vertices = NULL;
@@ -614,12 +595,12 @@ bool calibration_add_view(const size_t calibration_id, const size_t shot_id, con
 	{ 
 		if (points) 
 		{
-			ATOMIC_RW(opencv, cvReleaseMat(&points); );
+			cvReleaseMat(&points);
 		}
 
 		if (vertices) 
 		{
-			ATOMIC_RW(opencv, cvReleaseMat(&vertices); );
+			cvReleaseMat(&vertices);
 		}
 
 		if (points_indices) 
@@ -628,85 +609,69 @@ bool calibration_add_view(const size_t calibration_id, const size_t shot_id, con
 		}
 
 		printf("Unable to resect this image.\n"); 
-
+		opencv_end();
 		return false;
 	}
 
 	ASSERT(points->cols == vertices->cols, "resection data inconsistent");
-	if (ready && points->cols < 6) 
-	{
-		ready = false; 
-		ATOMIC_RW(opencv, 
-			cvReleaseMat(&points); 
-			cvReleaseMat(&vertices); 
-		);
-		free(points_indices);
-	}
+	if (ready && points->cols < 6) { ready = false; cvReleaseMat(&points); cvReleaseMat(&vertices); free(points_indices); }
 
 	// normalize data 
 	CvMat * H_normalization_inv = NULL;
 	double scale = 1;
 	if (normalize_data)
 	{
-		LOCK_RW(opencv)
-		{
-			CvMat * H_normalization = opencv_create_matrix(3, 3);
-			mvg_normalize_points(points, H_normalization, &scale);
-			H_normalization_inv = opencv_create_matrix(3, 3);
-			cvInvert(H_normalization, H_normalization_inv);
-			cvReleaseMat(&H_normalization);
-		}
-		UNLOCK_RW(opencv);
+		CvMat * H_normalization = opencv_create_matrix(3, 3);
+		mvg_normalize_points(points, H_normalization, &scale);
+		H_normalization_inv = opencv_create_matrix(3, 3);
+		cvInvert(H_normalization, H_normalization_inv);
+		cvReleaseMat(&H_normalization);
 	}
 
 	// calculate resection
-	bool ok; 
-	LOCK_RW(opencv)
+	CvMat * P = opencv_create_matrix(3, 4);
+	bool * inliers = ALLOC(bool, points->cols);
+	bool ok = mvg_resection_RANSAC(vertices, points, P, NULL, NULL, NULL, normalize_A, 500, threshold * scale, inliers);
+	if (ok)
 	{
-		CvMat * P = opencv_create_matrix(3, 4);
-		bool * inliers = ALLOC(bool, points->cols);
-		ok = mvg_resection_RANSAC(vertices, points, P, NULL, NULL, NULL, normalize_A, 500, threshold * scale, inliers);
-		if (ok)
+		// * if the resection was successful, save it *
+
+		// try to find the camera among those already calibrated
+		size_t P_id;
+		bool P_found;
+		LAMBDA_FIND(calibration->Ps, P_id, P_found, calibration->Ps.data[P_id].shot_id == shot_id);
+
+		// if it hasn't been found, create a new one
+		if (!P_found) 
 		{
-			// * if the resection was successful, save it *
-
-			// try to find the camera among those already calibrated
-			size_t P_id;
-			bool P_found;
-			LAMBDA_FIND(calibration->Ps, P_id, P_found, calibration->Ps.data[P_id].shot_id == shot_id);
-
-			// if it hasn't been found, create a new one
-			if (!P_found) 
-			{
-				ADD(calibration->Ps);
-				P_id = LAST_INDEX(calibration->Ps);
-			}
-			else
-			{
-				ASSERT(calibration->Ps.data[P_id].P, "camera calibration structure without allocated P matrix found");
-				cvReleaseMat(&calibration->Ps.data[P_id].P);
-			}
-
-			// denormalize P
-			if (normalize_data) cvMatMul(H_normalization_inv, P, P);
-			
-			// save it
-			calibration->Ps.data[P_id].P = P;
-			calibration->Ps.data[P_id].shot_id = shot_id;
-
-			// also update the estimate of inliers and outliers
-			calibration_update_inliers(calibration_id, P_id, points->cols, points_indices, inliers);
+			ADD(calibration->Ps);
+			P_id = LAST_INDEX(calibration->Ps);
+		}
+		else
+		{
+			ASSERT(calibration->Ps.data[P_id].P, "camera calibration structure without allocated P matrix found");
+			cvReleaseMat(&calibration->Ps.data[P_id].P);
 		}
 
-		// release resources
-		if (normalize_data) cvReleaseMat(&H_normalization_inv);
-		FREE(inliers);
-		FREE(points_indices);
-		cvReleaseMat(&points);
-		cvReleaseMat(&vertices);
-	}
-	UNLOCK_RW(opencv);
+		// denormalize P
+		if (normalize_data) cvMatMul(H_normalization_inv, P, P);
+		
+		// save it
+		calibration->Ps.data[P_id].P = P;
+		calibration->Ps.data[P_id].shot_id = shot_id;
 
+		// also update the estimate of inliers and outliers
+		calibration_update_inliers(calibration_id, P_id, points->cols, points_indices, inliers);
+	}
+
+	// release resources
+	if (normalize_data) cvReleaseMat(&H_normalization_inv);
+	FREE(inliers);
+	FREE(points_indices);
+	cvReleaseMat(&points);
+	cvReleaseMat(&vertices);
+
+	opencv_end();
 	return ok;
 }
 
@@ -816,20 +781,18 @@ bool calibration_auto_begin(
 
 	// call routine to actually do all the work
 	size_t calibration_id;
-	LOCK_RW(opencv)
+	opencv_begin();
+	if (!calibration_pair(shot_id1, shot_id2, normalize_data, normalize_A, distance_threshold, &calibration_id))
 	{
-		if (!calibration_pair(shot_id1, shot_id2, normalize_data, normalize_A, distance_threshold, &calibration_id))
-		{
-			printf("  Failed to calibrate image pair.\n");
-			UNLOCK_RW(opencv);
-			return false;
-		}
+		printf("  Failed to calibrate image pair.\n");
+		opencv_end();
+		return false;
 	}
-	UNLOCK_RW(opencv);
 
 	// refresh UI
-	calibration_refresh_UI();
+	tool_calibration_refresh_UI();
 
+	opencv_end();
 	return true;
 }
 
@@ -856,13 +819,13 @@ bool calibration_auto_step(
 	{
 		// let's refine using nonlinear optimization
 		printf("Refining calibration using bundle adjustment.\n");
-		calibration_bundle(distance_threshold);
+		calibration_bundle();
 		calibration->refined = true;
-		// opencv_begin();    // todo unify calibration_*'s requirement for opencv lock
+		opencv_begin();    // todo unify calibration_*'s requirement for opencv lock
 		// calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
-		// opencv_end();
+		opencv_end();
 		printf("  Bundle adjustment done.\n");
-		calibration_refresh_UI();
+		tool_calibration_refresh_UI();
 		
 		return true;
 	}
@@ -879,7 +842,7 @@ bool calibration_auto_step(
 		// count how many estimated vertices are on each uncalibrated shot
 		size_t * const vertex_count = ALLOC(size_t, shots.count);
 		memset(vertex_count, 0, sizeof(size_t) * shots.count);
-		for ALL(calibration->Xs, i)
+		for ALL(calibration->Xs, i) 
 		{
 			const size_t vertex_id = calibration->Xs.data[i].vertex_id; 
 			
@@ -983,7 +946,7 @@ bool calibration_auto_step(
 				printf("  Resection performed.\n");
 				FREE(best_shot);
 				FREE(best_corr);
-				calibration_refresh_UI();
+				tool_calibration_refresh_UI();
 				calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
 				return true;
 			}
@@ -1020,10 +983,10 @@ bool calibration_auto_end(
 
 	// final refinement
 	printf("Refining calibration using bundle adjustment.\n");
-	calibration_bundle(distance_threshold);
-	//opencv_begin();    // todo unify calibration_*'s requirement for opencv lock
-	//calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
-	//opencv_end();
+	calibration_bundle();
+	opencv_begin();    // todo unify calibration_*'s requirement for opencv lock
+	calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
+	opencv_end();
 
 	// metric stratification 
 	calibration_rectify(true);
@@ -1040,7 +1003,7 @@ bool calibration_auto_end(
 		ASSERT(validate_shot(P->shot_id), "invalid shot referenced in partial calibration");
 
 		shots.data[P->shot_id].projection = opencv_create_matrix(3, 4);
-		ATOMIC_RW(opencv, cvCopy(P->P, shots.data[P->shot_id].projection); );
+		cvCopy(P->P, shots.data[P->shot_id].projection);
 
 		// decompose all matrices into KR[I|-t]
 		geometry_calibration_from_P(P->shot_id);
@@ -1053,7 +1016,7 @@ bool calibration_auto_end(
 	visualization_process_data(vertices, shots);
 
 	// refresh UI
-	calibration_refresh_UI();
+	tool_calibration_refresh_UI();
 
 	// move from calibration to main workspace 
 	INDEX_CLEAR(ui_state.current_calibration);
@@ -1170,8 +1133,6 @@ void tool_calibration_auto_end()
 void tool_calibration_add_views()
 {
 	// get settings
-	const size_t calibration_id = ui_state.current_calibration;
-
 	tool_fetch_parameters(tool_calibration_id);
 	const double measurement_threshold = tool_get_real(tool_calibration_id, CALIBRATION_IMAGE_MEASUREMENT_THRESHOLD);
 	const bool
@@ -1189,7 +1150,6 @@ void tool_calibration_add_views()
 	size_t count = 0; 
 	for ALL(shots, i)
 	{
-		// calibrate the selected ones
 		if (ui_check_shot_meta(i)->selected)
 		{
 			if (shots.data[i].info_status < GEOMETRY_INFO_DEDUCED)
@@ -1201,9 +1161,6 @@ void tool_calibration_add_views()
 			calibration_add_view(ui_state.current_calibration, i, measurement_threshold, normalize_data, normalize_A);
 			count++;
 		}
-
-		// note that we're not performing triangulation when resecting more than one image
-		// (with current UI, it is not even possible)
 	}
 
 	// if no shot was selected, resect the current one 
@@ -1216,123 +1173,10 @@ void tool_calibration_add_views()
 		}
 
 		calibration_add_view(ui_state.current_calibration, ui_state.current_shot, measurement_threshold, normalize_data, normalize_A);
-		calibration_triangulate_vertices(calibration_id, measurement_threshold, 2, normalize_data, normalize_A, ui_state.current_shot);
 	}
 
 	// update calibrated flag 
-	calibration_refresh_UI();
-}
-
-// print the projection matrices in estimated in current calibration 
-void tool_calibration_print() 
-{
-	// if no partial calibration is selected, print the main calibration 
-	if (!INDEX_IS_SET(ui_state.current_calibration))
-	{
-		// go through all shots 
-		for ALL(shots, i) 
-		{
-			const Shot * const shot = shots.data + i; 
-
-			opencv_debug("projection matrix", shot->projection); 
-			opencv_debug("internal calibration", shot->internal_calibration); 
-		}
-	}
-	else
-	{
-		Calibration * const calibration = calibrations.data + ui_state.current_calibration;
-
-		// print the projection matrices
-		for ALL(calibration->Ps, i)
-		{
-			LOCK(opencv)
-			{
-				CvMat 
-					* I = opencv_create_matrix(3, 3), 
-					* R = opencv_create_matrix(3, 3), 
-					* T = opencv_create_matrix(3, 1)
-				;
-
-				// decompose projection matrix
-				const bool finite = mvg_finite_projection_matrix_decomposition(
-					calibration->Ps.data[i].P, I, R, T
-				);
-
-				// if the camera is finite, let's see what we can do to take it into normal form
-				if (finite) 
-				{
-					// now everything should be as before, but we can be sure the matrix is decomposed 
-					opencv_debug("projection matrix", calibration->Ps.data[i].P);
-					opencv_debug("internal calibration", I);
-				}
-
-				cvReleaseMat(&I); 
-				cvReleaseMat(&R); 
-				cvReleaseMat(&T); 
-			}
-			UNLOCK(opencv);
-		}
-	}
-}
-
-// test how close are we to metric reconstruction by decomposing the projection matrices 
-// and equating specific elements of the internal calibration matrix to ones or zeros 
-void tool_calibration_test_rectification() 
-{
-	if (!INDEX_IS_SET(ui_state.current_calibration))
-	{
-		printf("No calibration selected.\n");
-		return;
-	}
-
-	Calibration * const calibration = calibrations.data + ui_state.current_calibration;
-
-	// count the number of calibrated cameras 
-	for ALL(calibration->Ps, i)
-	{
-		// decompose the projection matrix 
-		LOCK_RW(opencv)
-		{
-			CvMat 
-				* I = opencv_create_matrix(3, 3), 
-				* R = opencv_create_matrix(3, 3), 
-				* T = opencv_create_matrix(3, 1)
-			;
-
-			// decompose projection matrix
-			const bool finite = mvg_finite_projection_matrix_decomposition(
-				calibration->Ps.data[i].P, I, R, T
-			);
-
-			// if the camera is finite, let's see what we can do to take it into normal form
-			if (finite) 
-			{
-				// now everything should be as before, but we can be sure the matrix is decomposed 
-				opencv_debug("Internal calibration", I);
-
-				// normalize the internal calibration a little 
-				const double 
-					fm1 = OPENCV_ELEM(I, 0, 0), 
-					fm2 = OPENCV_ELEM(I, 1, 1)
-				;
-
-				OPENCV_ELEM(I, 0, 0) = (10 * fm1 + fm2) / 11.0; 
-				OPENCV_ELEM(I, 1, 1) = (fm1 + 10 * fm2) / 11.0; 
-				OPENCV_ELEM(I, 0, 1) = OPENCV_ELEM(I, 0, 1) / 2.0;
-
-				// show internal calibration matrix after adjustments 
-				opencv_debug("After rectification", I);
-
-				// rebuild the projection matrix again 
-				mvg_assemble_projection_matrix(I, R, T, calibration->Ps.data[i].P);
-			}
-
-			cvReleaseMat(&I); 
-			cvReleaseMat(&R); 
-			cvReleaseMat(&T); 
-		}
-		UNLOCK_RW(opencv);
-	}
+	tool_calibration_refresh_UI();
 }
 
 // internal routine used to rectify to metric/affine reconstruction using the knowledge of principal point, 
@@ -1394,14 +1238,14 @@ void calibration_rectify(bool affine)
 	// perform autocalibration 
 	// CvMat * H = opencv_create_matrix(4, 4);
 	CvMat * pi_inf;
-	ATOMIC_RW(opencv, mvg_autocalibration_2(Ps, principal_points, count, Xs, point_count, &pi_inf); );
+	mvg_autocalibration_2(Ps, principal_points, count, Xs, point_count, &pi_inf);
 	FREE(Xs);
 	FREE(Ps);
 
 	// save the plane at infinity 
 	if (calibration->pi_infinity)
 	{
-		ATOMIC_RW(opencv, cvReleaseMat(&calibration->pi_infinity); );
+		cvReleaseMat(&calibration->pi_infinity);
 	}
 	calibration->pi_infinity = pi_inf;
 
@@ -1433,7 +1277,7 @@ void tool_calibration_use()
 	const size_t calibration_id = ui_state.current_calibration;
 
 	// perform metric stratification
-	// calibration_rectify(false);
+	calibration_rectify(false);
 
 	// clear all calibration matrices
 	geometry_release_shots_calibrations();
@@ -1444,12 +1288,8 @@ void tool_calibration_use()
 		const Calibration_Camera * P = calibrations.data[calibration_id].Ps.data + i; 
 		ASSERT(validate_shot(P->shot_id), "invalid shot referenced in partial calibration");
 
-		LOCK_RW(opencv)
-		{
-			shots.data[P->shot_id].projection = opencv_create_matrix(3, 4);
-			cvCopy(P->P, shots.data[P->shot_id].projection);
-		}
-		UNLOCK_RW(opencv);
+		shots.data[P->shot_id].projection = opencv_create_matrix(3, 4);
+		cvCopy(P->P, shots.data[P->shot_id].projection);
 
 		// decompose all matrices into KR[I|-t]
 		geometry_calibration_from_P(P->shot_id);
@@ -1511,23 +1351,19 @@ void calibration_triangulate_vertex(
 		double scale = 1;
 		if (normalize_data)
 		{
-			LOCK_RW(opencv)
-			{
-				// normalize the points
-				CvMat * H_normalization = opencv_create_matrix(3, 3);
-				mvg_normalize_points(points, H_normalization, &scale);
-				projection_matrices_normalized = ALLOC(CvMat *, points->cols);
+			// normalize the points
+			CvMat * H_normalization = opencv_create_matrix(3, 3);
+			mvg_normalize_points(points, H_normalization, &scale);
+			projection_matrices_normalized = ALLOC(CvMat *, points->cols);
 
-				// transform projection matrices accordingly
-				for (int i = 0; i < points->cols; i++)
-				{
-					CvMat * M = opencv_create_matrix(3, 4);
-					cvMatMul(H_normalization, projection_matrices_original[i], M);
-					projection_matrices_normalized[i] = M;
-				}
-				cvReleaseMat(&H_normalization);
+			// transform projection matrices accordingly
+			for (int i = 0; i < points->cols; i++)
+			{
+				CvMat * M = opencv_create_matrix(3, 4);
+				cvMatMul(H_normalization, projection_matrices_original[i], M);
+				projection_matrices_normalized[i] = M;
 			}
-			UNLOCK_RW(opencv);
+			cvReleaseMat(&H_normalization);
 		}
 
 		// try to find the vertex in existing dataset
@@ -1540,89 +1376,72 @@ void calibration_triangulate_vertex(
 			vertex = calibration->Xs.data + X_id;
 		}
 
-		LOCK_RW(opencv)
-		{
-			if (
-				points->cols >= 2 &&
-				(
-					X = mvg_triangulation_RANSAC(
-							normalize_data ? (const CvMat **)projection_matrices_normalized : projection_matrices_original, 
-							points, false, normalize_A, min_inliers, min_inliers, 5, // note magic constant
-							measurement_threshold * scale, inliers)
-					/*(X = mvg_triangulation_SVD(
-						normalize_data ? (const CvMat **)projection_matrices_normalized : projection_matrices_original, 
-						points, normalize_A, min_inliers, 0, -1
-					)*/
-				)
+		if (
+			points->cols >= 2 &&
+			(X = mvg_triangulation_RANSAC(
+				normalize_data ? (const CvMat **)projection_matrices_normalized : projection_matrices_original, 
+				points, false, normalize_A, min_inliers, min_inliers, MVG_RANSAC_TRIANGULATION_TRIALS, 
+				measurement_threshold * scale, inliers
 			)
-			{
-				// vertex has been triangulated - save its coordinates
-				if (vertex) 
-				{
-					if (vertex->X) cvReleaseMat(&vertex->X);
-					vertex->X = X;
-				}
-				else
-				{
-					ADD(calibration->Xs);
-					vertex = calibration->Xs.data + LAST_INDEX(calibration->Xs);
-					vertex->vertex_id = vertex_id;
-					vertex->X = X;
-				}
-
-				// also update the set of inliers and outliers 
-				calibration_update_inliers(calibration_id, points->cols, indices, inliers);
-			}
-			else if (vertex)
+			/*(X = mvg_triangulation_SVD(
+				normalize_data ? (const CvMat **)projection_matrices_normalized : projection_matrices_original, 
+				points, normalize_A, min_inliers, 0, -1
+			)*/
+			)
+		)
+		{
+			// vertex has been triangulated - save it's coordinates
+			if (vertex) 
 			{
 				if (vertex->X) cvReleaseMat(&vertex->X);
-				vertex->set = false;
-
-				// mark the inliers and outliers anyway
-				calibration_update_inliers(calibration_id, points->cols, indices, inliers);
+				vertex->X = X;
 			}
-
-			// release resources 
-			if (normalize_data)
+			else
 			{
-				for (int i = 0; i < points->cols; i++)
-				{
-					cvReleaseMat(projection_matrices_normalized + i);
-				}
-				FREE(projection_matrices_normalized);
+				ADD(calibration->Xs);
+				vertex = calibration->Xs.data + LAST_INDEX(calibration->Xs);
+				vertex->vertex_id = vertex_id;
+				vertex->X = X;
 			}
-			FREE(indices);
-			FREE(projection_matrices_original);
-			cvReleaseMat(&points);
+
+			// also update the set of inliers and outliers 
+			calibration_update_inliers(calibration_id, points->cols, indices, inliers);
 		}
-		UNLOCK_RW(opencv);
+		else if (vertex)
+		{
+			if (vertex->X) cvReleaseMat(&vertex->X);
+			vertex->set = false;
+
+			// mark the inliers and outliers anyway
+			calibration_update_inliers(calibration_id, points->cols, indices, inliers);
+		}
+
+		// release resources 
+		if (normalize_data)
+		{
+			for (int i = 0; i < points->cols; i++)
+			{
+				cvReleaseMat(projection_matrices_normalized + i);
+			}
+			FREE(projection_matrices_normalized);
+		}
+		FREE(indices);
+		FREE(projection_matrices_original);
+		cvReleaseMat(&points);
 	}
 }
 
 // triangulate all vertices (internal routine)
 void calibration_triangulate_vertices(
 	const size_t calibration_id, const double measurement_threshold, const int min_inliers,
-	const bool normalize_data, const bool normalize_A, const int shot_id
+	const bool normalize_data, const bool normalize_A
 )
 {
-	// go through all vertices either on current photo or all of them 
-	if (shot_id < 0) 
+	// go through all vertices
+	for ALL(vertices, i) 
 	{
-		for ALL(vertices, i) 
-		{
-			// try to triangulate it 
-			calibration_triangulate_vertex(calibration_id, i, measurement_threshold, 2, normalize_data, normalize_A);
-		}
-	}
-	else
-	{
-		for ALL(shots.data[shot_id].points, i)
-		{
-			const Point * const point = shots.data[shot_id].points.data + i;
-
-			// try to triangulate it 
-			calibration_triangulate_vertex(calibration_id, point->vertex, measurement_threshold, 2, normalize_data, normalize_A);
-		}
+		// try to triangulate it 
+		calibration_triangulate_vertex(calibration_id, i, measurement_threshold, 2, normalize_data, normalize_A);
 	}
 }
 
@@ -1702,7 +1521,7 @@ void calibration_refine(bool strict)
 	}
 
 	// update UI 
-	calibration_refresh_UI();
+	tool_calibration_refresh_UI();
 
 	if (!strict) 
 	{
@@ -1817,14 +1636,14 @@ void tool_calibration_clear()
 	}
 
 	// update calibrated flag 
-	calibration_refresh_UI();
+	tool_calibration_refresh_UI();
 }
 
-// calculating projection of vertex using the current camera 
-void calibration_projection(int j, int i, double * aj, double * bi, double * xij, void * adata)
+// calculating projection of vertex using current camera 
+void calibration_projection(int j, int i, double *aj, double *bi, double *xij, void *adata)
 {
 	double w = aj[2 * 4 + 0] * bi[0] + aj[2 * 4 + 1] * bi[1] + aj[2 * 4 + 2] * bi[2] + aj[2 * 4 + 3] * bi[3];
-	if (w == 0) w = 0.00000001; // note dirty...
+	if (w == 0) w = 0e-8; // note dirty...
 	xij[0] = (aj[0 * 4 + 0] * bi[0] + aj[0 * 4 + 1] * bi[1] + aj[0 * 4 + 2] * bi[2] + aj[0 * 4 + 3] * bi[3]) / w;
 	xij[1] = (aj[1 * 4 + 0] * bi[0] + aj[1 * 4 + 1] * bi[1] + aj[1 * 4 + 2] * bi[2] + aj[1 * 4 + 3] * bi[3]) / w;
 
@@ -1835,54 +1654,12 @@ void calibration_projection(int j, int i, double * aj, double * bi, double * xij
 	printf("[%f]", d);*/
 }
 
-// calculating jacobian of the cost function 
-void calibration_jacobian(int j, int i, double * aj, double * bi, double * Aij, double * Bij, void * adata)
-{
-	// clear with zeros
-	memset(Aij, 0, sizeof(double) * 24);
-	memset(Bij, 0, sizeof(double) * 8);
-
-	// compute partial derivatives along a_j
-	Aij[0]  = bi[0] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[1]  = bi[1] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[2]  = bi[2] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[3]  = bi[3] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-
-	const double C = aj[0] * bi[0] + aj[1] * bi[1] + aj[2] * bi[2] + aj[3] * bi[3];
-	Aij[8]  = -C * bi[0] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[9]  = -C * bi[1] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[10] = -C * bi[2] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[11] = -C * bi[3] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-
-	Aij[16]  = bi[0] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[17]  = bi[1] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[18]  = bi[2] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[19]  = bi[3] / (aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-
-	const double D = aj[4] * bi[0] + aj[5] * bi[1] + aj[6] * bi[2] + aj[7] * bi[3];
-	Aij[20] = -D * bi[0] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[21] = -D * bi[1] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[22] = -D * bi[2] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-	Aij[23] = -D * bi[3] / sqr_value(aj[8] * bi[0] + aj[9] * bi[1] + aj[10] * bi[2] + aj[11] * bi[3]);
-
-	// compute partial derivatives along b_i
-	double w = aj[2 * 4 + 0] * bi[0] + aj[2 * 4 + 1] * bi[1] + aj[2 * 4 + 2] * bi[2] + aj[2 * 4 + 3] * bi[3];
-	if (w == 0) w = 0.00000001; // note dirty...
-	Bij[0] = ( aj[0] * w - aj[8]  * (aj[0 * 4 + 0] * bi[0] + aj[0 * 4 + 1] * bi[1] + aj[0 * 4 + 2] * bi[2] + aj[0 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[1] = ( aj[1] * w - aj[9]  * (aj[0 * 4 + 0] * bi[0] + aj[0 * 4 + 1] * bi[1] + aj[0 * 4 + 2] * bi[2] + aj[0 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[2] = ( aj[2] * w - aj[10] * (aj[0 * 4 + 0] * bi[0] + aj[0 * 4 + 1] * bi[1] + aj[0 * 4 + 2] * bi[2] + aj[0 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[3] = ( aj[3] * w - aj[11] * (aj[0 * 4 + 0] * bi[0] + aj[0 * 4 + 1] * bi[1] + aj[0 * 4 + 2] * bi[2] + aj[0 * 4 + 3] * bi[3]) ) / sqr_value(w);
-
-	Bij[4] = ( aj[4] * w - aj[8]  * (aj[1 * 4 + 0] * bi[0] + aj[1 * 4 + 1] * bi[1] + aj[1 * 4 + 2] * bi[2] + aj[1 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[5] = ( aj[5] * w - aj[9]  * (aj[1 * 4 + 0] * bi[0] + aj[1 * 4 + 1] * bi[1] + aj[1 * 4 + 2] * bi[2] + aj[1 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[6] = ( aj[6] * w - aj[10] * (aj[1 * 4 + 0] * bi[0] + aj[1 * 4 + 1] * bi[1] + aj[1 * 4 + 2] * bi[2] + aj[1 * 4 + 3] * bi[3]) ) / sqr_value(w);
-	Bij[7] = ( aj[7] * w - aj[11] * (aj[1 * 4 + 0] * bi[0] + aj[1 * 4 + 1] * bi[1] + aj[1 * 4 + 2] * bi[2] + aj[1 * 4 + 3] * bi[3]) ) / sqr_value(w);
-}
-
 // run bundle adjustment 
-void calibration_bundle(const double measurement_threhsold) 
+void calibration_bundle() 
 {
 	const size_t BA_CAMERA_PARAMETERS = 12;
+
+	opencv_begin(); // lock OpenCV (perhaps unnecessary?)
 
 	// if no calibration is selected, we don't have anything to do 
 	if (!INDEX_IS_SET(ui_state.current_calibration))
@@ -1911,23 +1688,23 @@ void calibration_bundle(const double measurement_threhsold)
 	const int maximum_count = Xs_count * Ps_count;
 	char * visibility_mask = ALLOC(char, maximum_count);
 	memset(visibility_mask, 0, sizeof(char) * maximum_count);
-	double * measurement = ALLOC(double, maximum_count * 2); // note isn't this potentionally large?
+	double * measurement = ALLOC(double, maximum_count * 2);
 
 	// precompute index from shot_ids to order in Calibration_Cameras array 
-	size_t * shots_order = ALLOC(size_t, shots.count); 
-	for (size_t i = 0; i < shots.count; i++) shots_order[i] = SIZE_MAX;
+	size_t * shots_reindex = ALLOC(size_t, shots.count); 
+	for (size_t i = 0; i < shots.count; i++) shots_reindex[i] = SIZE_MAX;
 
 	{
 		size_t k, j = 0;
 		LAMBDA(
 			calibration->Ps, k, 
 			ASSERT(calibration->Ps.data[k].shot_id < shots.count, "invalid shot index");
-			shots_order[calibration->Ps.data[k].shot_id] = j++;
+			shots_reindex[calibration->Ps.data[k].shot_id] = j++;
 		);
-		// note that the domain of the shots_order mapping is defined by the 
+		// note that the domain of the shots_reindex mapping is defined by the 
 		//      partial_calibration flag - therefore, it must be kept consistent
 		// note could we have a dedicated function for this stuff (generally)? 
-		// something like: INDEX(shots_order, shots, calibration->Ps)
+		// something like: INDEX(shots_reindex, shots, calibration->Ps)
 	}
 
 	// go through all vertices and generate visibility mask and measurement vector 
@@ -1952,15 +1729,15 @@ void calibration_bundle(const double measurement_threhsold)
 			// we care only about photos in this calibration (we updated the calibrated flag, remember?)
 			if (shot->partial_calibration) // note is this done right? will the compiler join this and the following ifs in release? // obsolete comment
 			{
-				if (!(IS_SET(calibration->Ps.data[shots_order[index->primary]].points_meta, index->secondary))) continue;
+				if (!(IS_SET(calibration->Ps.data[shots_reindex[index->primary]].points_meta, index->secondary))) continue;
 				
 				// and we also discard outliers
-				if (calibration->Ps.data[shots_order[index->primary]].points_meta.data[index->secondary].inlier == 1)
+				if (calibration->Ps.data[shots_reindex[index->primary]].points_meta.data[index->secondary].inlier == 1)
 				{
 					ASSERT(index->primary < shots.count, "invalid shot index");
-					ASSERT(shots_order[index->primary] < Ps_count, "invalid shot order index");
-					vertex_visibility[shots_order[index->primary]] = 1; 
-					incidence_ids[shots_order[index->primary]] = j;
+					ASSERT(shots_reindex[index->primary] < Ps_count, "invalid shot order index");
+					vertex_visibility[shots_reindex[index->primary]] = 1; 
+					incidence_ids[shots_reindex[index->primary]] = j;
 				}
 			}
 		}
@@ -2007,8 +1784,8 @@ void calibration_bundle(const double measurement_threhsold)
 		{
 			const double d = OPENCV_ELEM(camera->P, j / 4, j % 4);
 			ASSERT(camera->shot_id < shots.count, "invalid shot index"); 
-			ASSERT(shots_order[camera->shot_id] * BA_CAMERA_PARAMETERS + j < parameters_count, "parameter index out of bounds");
-			parameters[shots_order[camera->shot_id] * BA_CAMERA_PARAMETERS + j] = d;
+			ASSERT(shots_reindex[camera->shot_id] * BA_CAMERA_PARAMETERS + j < parameters_count, "parameter index out of bounds");
+			parameters[shots_reindex[camera->shot_id] * BA_CAMERA_PARAMETERS + j] = d;
 		}
 		Ps_i++; 
 	}
@@ -2090,7 +1867,7 @@ void calibration_bundle(const double measurement_threhsold)
 						// find which shot this is 
 						size_t shot_id; 
 						bool found; 
-						LAMBDA_FIND(shots, shot_id, found, shots_order[shot_id] == j); 
+						LAMBDA_FIND(shots, shot_id, found, shots_reindex[shot_id] == j); 
 						ASSERT(found, "shot not found");
 
 						// find which point is it (i.e., what's the measurement)
@@ -2171,22 +1948,21 @@ void calibration_bundle(const double measurement_threhsold)
 	// * call bundle adjustment routine * 
 	sba_motstr_levmar(
 		Xs_count,
-		0, 
 		Ps_count,
-		0, 
+		0,
 		visibility_mask,
 		parameters,
-		BA_CAMERA_PARAMETERS,
+		BA_CAMERA_PARAMETERS, 
 		4,
-		measurement,
+		measurement, 
+		NULL, 
+		2, 
+		calibration_projection, 
+		NULL, 
 		NULL,
-		2,
-		calibration_projection,
-		calibration_jacobian,
-		NULL,
-		10,
+		1000,
 		0, // verbose option
-		options,
+		options, 
 		info
 	);
 
@@ -2201,8 +1977,8 @@ void calibration_bundle(const double measurement_threhsold)
 		for (int j = 0; j < 12; j++) 
 		{
 			ASSERT(camera->shot_id < shots.count, "invalid shot index");
-			ASSERT(shots_order[camera->shot_id] * BA_CAMERA_PARAMETERS + j < parameters_count, "invalid parameter index");
-			OPENCV_ELEM(camera->P, j / 4, j % 4) = parameters[shots_order[camera->shot_id] * BA_CAMERA_PARAMETERS + j];
+			ASSERT(shots_reindex[camera->shot_id] * BA_CAMERA_PARAMETERS + j < parameters_count, "invalid parameter index");
+			OPENCV_ELEM(camera->P, j / 4, j % 4) = parameters[shots_reindex[camera->shot_id] * BA_CAMERA_PARAMETERS + j];
 		}
 		Ps_i++; 
 	}
@@ -2222,34 +1998,13 @@ void calibration_bundle(const double measurement_threhsold)
 	ASSERT(Xs_i == Xs_count, "inconsistent counters");
 
 	// * re-evaluate inliers and outliers * 
-
-	// we'll need reindexing arrays
-	/*size_t * vertices_to_Xs_reindex = (size_t *)malloc(sizeof(size_t) * vertices.count); 
-	{
-		size_t i, j = 0;
-		LAMBDA(calibration->Xs, i, vertices_to_Xs_reindex[calibration->Xs.data[i].vertex_id] = i; ); 
-	}
-
 	for ALL(calibration->Ps, i) 
 	{
 		const Calibration_Camera * camera = calibration->Ps.data + i; 
 
-		// go through this camera's points 
-		for ALL(camera->points_meta, j) 
-		{
-			const size_t vertex_id = shots.data[camera->shot_id].points.data[j].vertex;
-			const size_t X_id = vertices_to_Xs_reindex[vertex_id];
-
-			// project the point 
-			double reprojection[2];
-			opencv_vertex_projection_visualization(camera->P, calibration->Xs.data[X_id].X, reprojection);
-
-			// calculate the reprojection error 
-			
-		}
+		// go through this cameras points 
+		// todo 
 	}
-
-	FREE(vertices_to_Xs_reindex);*/
 
 	// * release structures *
 	FREE(parameters);
@@ -2257,6 +2012,8 @@ void calibration_bundle(const double measurement_threhsold)
 	FREE(visibility_mask);
 	FREE(vertex_visibility);
 	FREE(incidence_ids);
+
+	opencv_end();
 }
 
 // call nonlinear optimization routine 
@@ -2278,7 +2035,7 @@ void tool_calibration_bundle()
 		normalize_data = tool_get_bool(tool_calibration_id, CALIBRATION_NORMALIZE_DATA),
 		normalize_A = tool_get_bool(tool_calibration_id, CALIBRATION_NORMALIZE_A);
 
-	calibration_bundle(measurement_threshold);
-	// calibration_triangulate_vertices(calibration_id, measurement_threshold, 2, normalize_data, normalize_A);
+	calibration_bundle();
+	calibration_triangulate_vertices(calibration_id, measurement_threshold, 2, normalize_data, normalize_A);
 }
 

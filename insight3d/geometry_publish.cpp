@@ -25,6 +25,7 @@
 #include "geometry_publish.h"
 
 // exports data from application structures into structures suitable for OpenCV and MVG
+// note opencv should be locked
 bool publish_triangulation_data(
 	const Vertex_Incidence & incidence, size_t vertex_id, const CvMat * * & projection_matrices, CvMat * & points, bool * shots_to_use
 )
@@ -66,7 +67,7 @@ bool publish_triangulation_data(
 	// allocate and initialize data structures 
 	projection_matrices = ALLOC(const CvMat *, count_points);
 	memset(projection_matrices, 0, count_points * sizeof(CvMat * *)); 
-	ATOMIC_RW(opencv, points = opencv_create_matrix(2, count_points); );
+	points = opencv_create_matrix(2, count_points); 
 	
 	// go through all shots with this vertex
 	count_points = 0; 
@@ -97,6 +98,7 @@ bool publish_triangulation_data(
 }
 
 // exports data from application structures of given calibration into structures suitable for OpenCV and MVG
+// note opencv should be locked
 bool publish_triangulation_data_from_calibration(
 	const size_t calibration_id, const Vertex_Incidence & incidence, size_t vertex_id, 
 	const CvMat * * & projection_matrices, CvMat * & points, size_t * & indices
@@ -156,7 +158,7 @@ bool publish_triangulation_data_from_calibration(
 	// allocate and initialize data structures 
 	projection_matrices = ALLOC(const CvMat *, count_points); 
 	memset(projection_matrices, 0, count_points * sizeof(CvMat * *)); 
-	ATOMIC_RW(opencv, points = opencv_create_matrix(2, count_points); );
+	points = opencv_create_matrix(2, count_points); 
 
 	// go through all cameras on which this vertex is visible
 	for (size_t i = 0; i < count_points; i++) 
@@ -179,6 +181,7 @@ bool publish_triangulation_data_from_calibration(
 }
 
 // export data for the computation of fundamental matrix
+// note opencv should be locked
 bool publish_2_view_reconstruction_data(
 	const size_t shot_id1, const size_t shot_id2, CvMat ** points1, CvMat ** points2, 
 	size_t ** points1_indices, size_t ** points2_indices
@@ -218,12 +221,8 @@ bool publish_2_view_reconstruction_data(
 	*points1_indices = ALLOC(size_t, correspondences);
 	*points2_indices = ALLOC(size_t, correspondences);
 
-	LOCK_RW(opencv)
-	{
-		*points1 = opencv_create_matrix(2, correspondences);
-		*points2 = opencv_create_matrix(2, correspondences);
-	}
-	UNLOCK_RW(opencv);
+	*points1 = opencv_create_matrix(2, correspondences);
+	*points2 = opencv_create_matrix(2, correspondences);
 
 	// go through all points on the first image
 	size_t n = 0;
@@ -265,6 +264,7 @@ bool publish_2_view_reconstruction_data(
 
 // export data for resection of given camera, vertices' coordinates are inhomogeneous
 // but the coordinates of points are homogeneous vectors
+// note opencv should be locked
 bool publish_resection_data_from_calibration(
 	const size_t calibration_id, const size_t shot_id, 
 	CvMat ** points, CvMat ** vertices, size_t ** points_indices
@@ -301,22 +301,17 @@ bool publish_resection_data_from_calibration(
 	}
 
 	// allocate the structures 
-	LOCK_RW(opencv)
-	{
-		*points = opencv_create_matrix(2, count); 
-		*vertices = opencv_create_matrix(4, count); 
-		*points_indices = ALLOC(size_t, count);
+	*points = opencv_create_matrix(2, count); 
+	*vertices = opencv_create_matrix(4, count); 
+	*points_indices = ALLOC(size_t, count);
 
-		if (!*points || !*vertices || !*points_indices) 
-		{
-			if (*points) cvReleaseMat(points); 
-			if (*vertices) cvReleaseMat(vertices);
-			if (*points_indices) FREE(points_indices);
-			UNLOCK_RW(opencv);
-			return false;
-		}
+	if (!*points || !*vertices || !*points_indices) 
+	{
+		if (*points) cvReleaseMat(points); 
+		if (*vertices) cvReleaseMat(vertices);
+		if (*points_indices) FREE(points_indices);
+		return false;
 	}
-	UNLOCK_RW(opencv);
 
 	// fill in the data 
 	size_t j = 0;
@@ -378,7 +373,7 @@ CvMat * publish_polygon(const size_t shot_id, const size_t polygon_id)
 	}
 
 	// copy them into matrix
-	ATOMIC_RW(opencv, CvMat * vertices = opencv_create_matrix(2, count); );
+	CvMat * vertices = opencv_create_matrix(2, count);
 	count = 0;
 	for ALL(polygon->vertices, j)
 	{

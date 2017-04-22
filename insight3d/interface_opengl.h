@@ -27,9 +27,6 @@
 
 #include "SDL.h" 
 #include "SDL_opengl.h"
-#include "pthread.h"
-
-extern pthread_mutex_t opengl_mutex;
 
 // #include "GL/gl.h"
 // #include "GL/glu.h"

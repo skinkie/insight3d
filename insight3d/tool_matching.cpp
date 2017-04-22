@@ -121,6 +121,7 @@ void tool_matching_standard()
 {
 	// save the current values of parameters 
 	tool_fetch_parameters(tool_matching_id);
+	opencv_begin();
 	
 	// fetch settings 
 	const double fsor_limit = tool_get_real(tool_matching_id, MATCHING_SIMILARITY_THRESHOLD);
@@ -193,6 +194,8 @@ void tool_matching_standard()
 	// finally delete inconsistent vertices 
 	ui_empty_selection_list();
 	matching_remove_conflicting_tracks();
+
+	opencv_end();
 }
 
 /*// remove tracks occuring on a single shot more than once
@@ -208,6 +211,8 @@ void matching_extract_features(const double max_size)
 {
 	// extract keypoints from all images 
 	debug("extracting keypoints");
+
+	for ALL(shots, i)
 
 	double progress; 
 	size_t shots_count = 0; 
@@ -235,8 +240,7 @@ void matching_extract_features(const double max_size)
 		tool_show_progress((shot_no - 1) * (1.0 / shots_count));
 
 		// load the picture
-		IplImage * img; 
-		ATOMIC_RW(opencv, img = opencv_load_image(shot->image_filename, (int)max_size); );
+		IplImage * img = opencv_load_image(shot->image_filename, (int)max_size);
 		if (!img)
 		{
 			TOOL_PARTIAL_FAIL("Cannot load image from disk", continue);
@@ -252,16 +256,12 @@ void matching_extract_features(const double max_size)
 		meta->height = img->height;
 
 		// extract SIFT keypoints
-		UNLOCK(geometry)
-		{
-			ATOMIC_RW(opencv, shot->keypoints_count = sift_features(img, &shot->keypoints); );
-			printf("[count = %d]\n", shot->keypoints_count);
-			fflush(stdout);
-		}
-		LOCK(geometry);
+		shot->keypoints_count = sift_features(img, &shot->keypoints);
+		printf("[count = %d]\n", shot->keypoints_count);
+		fflush(stdout);
 
 		// build kd tree
-		ATOMIC_RW(opencv, shot->kd_tree = kdtree_build(shot->keypoints, shot->keypoints_count); ); // todo check if this is really necessary; maybe kdtree_build doesn't use opencv that much
+		shot->kd_tree = kdtree_build(shot->keypoints, shot->keypoints_count);
 
 		// if kd-tree failed, we release everything and mark as unmatched
 		if (!shot->kd_tree)
@@ -271,7 +271,7 @@ void matching_extract_features(const double max_size)
 			free(shot->keypoints); 
 			shot->keypoints = NULL; 
 			shot->keypoints_count = 0;
-			ATOMIC_RW(opencv, cvReleaseImage(&img); );
+			cvReleaseImage(&img);
 			TOOL_PARTIAL_FAIL("Failed to build kd-tree", continue);
 		}
 
@@ -282,7 +282,7 @@ void matching_extract_features(const double max_size)
 		}
 
 		// release resources 
-		ATOMIC_RW(opencv, cvReleaseImage(&img); );
+		cvReleaseImage(&img);
 	}
 
 	tool_end_progressbar();
@@ -294,7 +294,6 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 	const double fsor_limit_sq = fsor_limit * fsor_limit;
 
 	DYN_INIT(uf_nodes);
-	printf("x");
 
 	// find maximum number of detected features
 	int max_features_count = 0; 
@@ -313,39 +312,12 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 
 	// count image pairs 
 	size_t image_pairs_count = 0; 
-	size_t images_count = 0;
 	for ALL(shots, i) 
 	{
-		images_count++;
-
 		for ALL(shots, j) 
 		{
-			image_pairs_count++; // note how currently this is very stupid 
+			image_pairs_count++; 
 		}
-	}
-
-	FILE * fplan = fopen("matching_plan.txt", "r"); 
-	bool * plan = NULL;
-	if (fplan) 
-	{
-		printf("Using matching plan.\n");
-		plan = ALLOC(bool, images_count * images_count);
-		memset(plan, 0, sizeof(bool) * images_count * images_count);
-		while (!feof(fplan)) 
-		{
-			int img1, img2; 
-			if (fscanf(fplan, "%d %d\n", &img1, &img2) == 2)
-			{
-				printf(".");
-				plan[img1 * images_count + img2] = true; 
-				plan[img2 * images_count + img1] = true; 
-			}
-		}
-		fclose(fplan); 
-	}
-	else
-	{
-		printf("Not using matching plan.\n");
 	}
 
 	// match all image-pairs 
@@ -372,7 +344,6 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 
 			if (topology == MATCHING_TOPOLOGY_SEQUENCE && abs(ith - jth) > neighbours) continue;
 			if (i == j) continue; 
-			if (plan && !plan[ith * images_count + jth]) continue;
 			Shot * const second_shot = shots.data + j;
 			if (!second_shot->kd_tree) continue; 
 			Matching_Shot * second_meta = (Matching_Shot *)second_shot->matching;
@@ -389,7 +360,7 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 
 				feature * first_feature = first_shot->keypoints + keypoint;
 				feature ** neighbours; 
-				ATOMIC_RW(opencv, const int found = kdtree_bbf_knn(second_shot->kd_tree, first_feature, 2, &neighbours, 200); );
+				const int found = kdtree_bbf_knn(second_shot->kd_tree, first_feature, 2, &neighbours, 200);
 
 				if (found == 2) 
 				{
@@ -415,13 +386,10 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 			if (use_ransac && correspondences >= 18) 
 			{
 				// allocate structures
-				ATOMIC_RW(opencv, 
-					CvMat * first_points = cvCreateMat(2, correspondences, CV_64F); 
-					CvMat * second_points = cvCreateMat(2, correspondences, CV_64F);
-					CvMat * status = cvCreateMat(1, correspondences, CV_8S);
-					cvZero(status);
-					CvMat * F = cvCreateMat(3, 3, CV_64F);
-				);
+				CvMat * first_points = cvCreateMat(2, correspondences, CV_64F), * second_points = cvCreateMat(2, correspondences, CV_64F);
+				CvMat * status = cvCreateMat(1, correspondences, CV_8UC1);
+				cvZero(status);
+				CvMat * F = cvCreateMat(3, 3, CV_64F);
 
 				// fill in the data
 				for (size_t k = 0; k < correspondences; k++) 
@@ -437,7 +405,7 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 				}
 
 				// calculate the fundamental matrix
-				ATOMIC_RW(opencv, cvFindFundamentalMat(first_points, second_points, F, CV_FM_RANSAC, epipolar_distance_threshold, 0.99, status); );
+				cvFindFundamentalMat(first_points, second_points, F, CV_FM_RANSAC, epipolar_distance_threshold, 0.99, status);
 
 				// export into om, calculate average translation
 				int * om = ALLOC(int, first_shot->keypoints_count);
@@ -480,27 +448,22 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
 				// improve the number of correspondences using guided matching 
 				printf("[");
 				fflush(stdout);
-				LOCK_RW(opencv)
-				{
-					correspondences = mvg_guided_matching(
-						features1_copy, first_shot->keypoints_count, first_shot->width, first_shot->height, first_shot->width / (double)first_meta->width, 
-						features2_copy, second_shot->keypoints_count, second_shot->width, second_shot->height, second_shot->width / (double)second_meta->width, 
-						F,
-						epipolar_distance_threshold,
-						fsor_limit,
-						matches
-					);
-					/*correspondences = mvg_guided_matching_translation(
-						features1_copy, first_shot->keypoints_count, first_shot->width, first_shot->height, first_shot->width / (double)first_meta->width, 
-						features2_copy, second_shot->keypoints_count, second_shot->width, second_shot->height, second_shot->width / (double)second_meta->width, 
-						tx, ty,
-						100,
-						fsor_limit,
-						matches
-					);*/
-				}
-				UNLOCK_RW(opencv);
-
+				correspondences = mvg_guided_matching(
+					features1_copy, first_shot->keypoints_count, first_shot->width, first_shot->height, first_shot->width / (double)first_meta->width, 
+					features2_copy, second_shot->keypoints_count, second_shot->width, second_shot->height, second_shot->width / (double)second_meta->width, 
+					F,
+					epipolar_distance_threshold,
+					fsor_limit,
+					matches
+				);
+				/*correspondences = mvg_guided_matching_translation(
+					features1_copy, first_shot->keypoints_count, first_shot->width, first_shot->height, first_shot->width / (double)first_meta->width, 
+					features2_copy, second_shot->keypoints_count, second_shot->width, second_shot->height, second_shot->width / (double)second_meta->width, 
+					tx, ty,
+					100,
+					fsor_limit,
+					matches
+				);*/
 				printf("]");
 				fflush(stdout);
 
@@ -642,3 +605,4 @@ void matching_features_union(Matching_UF_Nodes & nodes, feature * first, feature
 	nodes.data[second_root_id].root = false; 
 	nodes.data[second_root_id].i = first_root_id;
 }
+

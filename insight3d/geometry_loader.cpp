@@ -27,7 +27,7 @@
 /* loader constants */ 
 
 // xml elements
-/*const xmlChar * XML_ELEM_SHOT = xmlCharStrdup("SHOT"); 
+const xmlChar * XML_ELEM_SHOT = xmlCharStrdup("SHOT"); 
 const xmlChar * XML_ELEM_TRANSLATION = xmlCharStrdup("T");
 const xmlChar * XML_ELEM_ROTATION = xmlCharStrdup("R");
 const xmlChar * XML_ELEM_CAMERA = xmlCharStrdup("CINF"); 
@@ -44,7 +44,7 @@ const xmlChar * XML_ATTR_Y = xmlCharStrdup("y");
 const xmlChar * XML_ATTR_Z = xmlCharStrdup("z");
 const xmlChar * XML_ATTR_FOVX = xmlCharStrdup("fovx");
 const xmlChar * XML_ATTR_FILM_BACK = xmlCharStrdup("fbh");
-const xmlChar * XML_ATTR_IMAGE = xmlCharStrdup("img");*/
+const xmlChar * XML_ATTR_IMAGE = xmlCharStrdup("img");
 
 // load project 
 bool geometry_load_project(const char * filename)
@@ -69,19 +69,19 @@ bool geometry_load_project(const char * filename)
 	}
 
 	// load vertices
-	in >> s1;
-	if (s1 != "vertices")
+	in >> s1; 
+	if (s1 != "vertices") 
 	{
 		printf("Keyword 'vertices' expected but not found.\n");
 		return false;
 	}
 
 	size_t vertices_count, vertices_iter = 0;
-	in >> vertices_count;
+	in >> vertices_count; 
 	size_t * vertices_reindex = ALLOC(size_t, vertices_count);
-	for (size_t i = 0; i < vertices_count; i++)
+	for (size_t i = 0; i < vertices_count; i++) 
 	{
-		size_t vertex_id;
+		size_t vertex_id; 
 		geometry_new_vertex(vertex_id);
 		vertices_reindex[vertices_iter++] = vertex_id;
 		int vertex_type = 0;
@@ -131,42 +131,10 @@ bool geometry_load_project(const char * filename)
 			>> shot->film_back
 			>> shot->fovx
 			>> shot->fovy
-			>> shot->height;
-
-		char x; 
-		in >> x; 
-		if (x != '"')
-		{
-			printf("Expected '\"' character.\n"); 
-			return false;
-		}
-
-		s1 = "";
-		while (in.get(x))
-		{
-			if (x == '"') break;
-
-			s1 += x;
-		}
-
-		in >> status;
-
-		in >> x;  
-		if (x != '"')
-		{
-			printf("Expected '\"' character.\n"); 
-			return false;
-		}
-
-		s2 = "";
-		while (in.get(x))
-		{
-			if (x == '"') break;
-
-			s2 += x;
-		}
-
-		in
+			>> shot->height
+			>> s1
+			>> status
+			>> s2
 			>> shot->pp_x
 			>> shot->pp_y
 			>> shot->resected
@@ -249,24 +217,22 @@ void geometry_process_data(Shots shots)
 		}
 
 		// convert translation vector to opencv
-		LOCK_RW(opencv)
-		{
-			shot->translation = opencv_create_vector(shot->T, 3); 
+		opencv_begin();
+		shot->translation = opencv_create_vector(shot->T, 3); 
 
-			// compute rotation matrix
-			shot->rotation = opencv_create_rotation_matrix_from_euler(shots.data[i].R_euler);
-			// printf("%d\n", i); 
-			// opencv_debug("Rotation matrix", shot->rotation);
+		// compute rotation matrix
+		shot->rotation = opencv_create_rotation_matrix_from_euler(shots.data[i].R_euler);
+		// printf("%d\n", i); 
+		// opencv_debug("Rotation matrix", shot->rotation);
 
-			// build calibration matrix
-			shot->internal_calibration = opencv_create_matrix(3, 3);
-			OPENCV_ELEM(shot->internal_calibration, 0, 0) = shot->f; 
-			OPENCV_ELEM(shot->internal_calibration, 1, 1) = shot->f; 
-			OPENCV_ELEM(shot->internal_calibration, 0, 2) = shot->pp_x; // shot->width / 2.0; 
-			OPENCV_ELEM(shot->internal_calibration, 1, 2) = shot->pp_y; // shot->height / 2.0; 
-			OPENCV_ELEM(shot->internal_calibration, 2, 2) = 1; 
-		}
-		UNLOCK_RW(opencv);
+		// build calibration matrix
+		shot->internal_calibration = opencv_create_matrix(3, 3);
+		OPENCV_ELEM(shot->internal_calibration, 0, 0) = shot->f; 
+		OPENCV_ELEM(shot->internal_calibration, 1, 1) = shot->f; 
+		OPENCV_ELEM(shot->internal_calibration, 0, 2) = shot->pp_x; // shot->width / 2.0; 
+		OPENCV_ELEM(shot->internal_calibration, 1, 2) = shot->pp_y; // shot->height / 2.0; 
+		OPENCV_ELEM(shot->internal_calibration, 2, 2) = 1; 
+		opencv_end();
 
 		// finally assemble projection matrix 
 		geometry_calibration_from_decomposed_matrices(i);
@@ -278,36 +244,32 @@ void geometry_process_data(Shots shots)
 		std::ifstream H((std::string(shot->image_filename) + ".H.txt").c_str());
 		if (H)
 		{
-			LOCK_RW(opencv) 
-			{
-				printf("~");
-				CvMat * M = opencv_create_matrix(3, 3), * M_inv = opencv_create_matrix(3, 3); 
+			printf("~");
+			CvMat * M = opencv_create_matrix(3, 3), * M_inv = opencv_create_matrix(3, 3); 
 
-				H >> OPENCV_ELEM(M, 0, 0);
-				H >> OPENCV_ELEM(M, 0, 1);
-				H >> OPENCV_ELEM(M, 0, 2);
+			H >> OPENCV_ELEM(M, 0, 0);
+			H >> OPENCV_ELEM(M, 0, 1);
+			H >> OPENCV_ELEM(M, 0, 2);
 
-				H >> OPENCV_ELEM(M, 1, 0);
-				H >> OPENCV_ELEM(M, 1, 1);
-				H >> OPENCV_ELEM(M, 1, 2);
+			H >> OPENCV_ELEM(M, 1, 0);
+			H >> OPENCV_ELEM(M, 1, 1);
+			H >> OPENCV_ELEM(M, 1, 2);
 
-				H >> OPENCV_ELEM(M, 2, 0);
-				H >> OPENCV_ELEM(M, 2, 1);
-				H >> OPENCV_ELEM(M, 2, 2);
-				
-				cvInvert(M, M_inv, CV_SVD);
-				cvMatMul(M_inv, shot->projection, shot->projection);
+			H >> OPENCV_ELEM(M, 2, 0);
+			H >> OPENCV_ELEM(M, 2, 1);
+			H >> OPENCV_ELEM(M, 2, 2);
+			
+			cvInvert(M, M_inv, CV_SVD);
+			cvMatMul(M_inv, shot->projection, shot->projection);
 
-				cvReleaseMat(&M);
-				cvReleaseMat(&M_inv);
-			}
-			UNLOCK_RW(opencv);
+			cvReleaseMat(&M);
+			cvReleaseMat(&M_inv);
 		}
 	}
 }
 
 // SAX callbacks
-/*void geometry_loader_SAX_start_element(geometry_loader_SAX_state * state, const xmlChar * name, const xmlChar ** attrs)
+void geometry_loader_SAX_start_element(geometry_loader_SAX_state * state, const xmlChar * name, const xmlChar ** attrs)
 {
 	if (xmlStrcmp(name, XML_ELEM_SHOT) == 0)
 	{
@@ -524,10 +486,10 @@ void geometry_loader_SAX_end_element(geometry_loader_SAX_state * state, const xm
 
 void geometry_loader_SAX_characters(geometry_loader_SAX_state * state, const xmlChar * cdata, int len)
 {
-}*/
+}
 
 // load data from realviz xml file // todo probably rename this function to reflect that it loads .rzml, .rzi files
-/*void geometry_loader(const char * xml_filename, Shots & shots)
+void geometry_loader(const char * xml_filename, Shots & shots)
 {
 	// initialization
 	xmlSAXHandler handler; 
@@ -557,7 +519,7 @@ void geometry_loader_SAX_characters(geometry_loader_SAX_state * state, const xml
 	free(state->filename); 
 	FREE(state->directory);
 	FREE(state); 
-}*/
+}
 
 // load data from realviz rz3 file
 bool geometry_loader_rz3(const char * xml_filename, Shots & shots)
@@ -599,13 +561,9 @@ bool geometry_loader_rz3(const char * xml_filename, Shots & shots)
 		shot->pp_y = principal_point[1];
 
 		// decompose matrix
-		LOCK_RW(opencv)
-		{
-			CvMat * R_in_cv = opencv_create_matrix(3, 3, R);
-			opencv_rotation_matrix_to_angles(R_in_cv, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]); 
-			cvReleaseMat(&R_in_cv);
-		}
-		UNLOCK_RW(opencv);
+		CvMat * R_in_cv = opencv_create_matrix(3, 3, R);
+		opencv_rotation_matrix_to_angles(R_in_cv, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]); 
+		cvReleaseMat(&R_in_cv);
 
 		shot->R_euler[0] += OPENCV_PI;
 		shot->R_euler[0] *= -1;
@@ -646,7 +604,6 @@ bool geometry_loader_vertices(const char * txt_filename, Vertices & vertices, si
 
 // load 2d points from text file (one point per line: <picture_no> <vertex_no> <credibility> <x> <y> <...>); returns true on success
 // todo how to distinguish between this and currently used geometry_loader_points
-// todo if we decide to uncomment this, check thread safety 
 /*bool geometry_loader_points(const char * txt_filename, Shots & shots, Vertices & vertices, size_t group = 0)
 {
 	// open file 
@@ -797,11 +754,11 @@ bool geometry_loader_points(const char * pictures_filename, const char * tracks_
 		while (input_tracks >> picture_id >> track_id >> x >> y)
 		{
 			// skip track if it's picture isn't in our sequence
-			if (!IS_SET(index_in_shots, picture_id)) continue;
+			if (!IS_SET(index_in_shots, picture_id)) continue; 
 
 			// create vertex for this point (does nothing if it already exists)
 			const size_t vertex_id = vertices_offset + track_id;
-			if (t++ % 10000 == 0)
+			if (t++ % 10000 == 0) 
 			{
 				// debug
 				printf("vertices: accessing %d, count %d, allocated %d\n", vertex_id, vertices.count, vertices.allocated);

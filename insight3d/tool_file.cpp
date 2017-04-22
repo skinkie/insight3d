@@ -111,7 +111,7 @@ void tool_file_add_image()
 
 void tool_file_import_realviz_project()
 {
-	/* char * filename = tool_choose_file();
+	char * filename = tool_choose_file();
 	if (!filename) return; 
 	
 	geometry_loader(filename, shots);
@@ -120,7 +120,7 @@ void tool_file_import_realviz_project()
 	ui_workflow_default_shot();
 	visualization_process_data(vertices, shots);
 
-	FREE(filename); */
+	FREE(filename);
 }
 
 void tool_file_import_points()

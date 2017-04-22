@@ -43,7 +43,6 @@ DYNAMIC_STRUCTURE(Calibrations, Calibration);
 
 // * allocated instances *
 
-pthread_mutex_t geometry_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; // PTHREAD_MUTEX_INITIALIZER;
 Shots shots; // shots
 Shots_Relations shots_relations; // relations between groups of shots
 Polygons_3d polygons; // 3d polygons 
@@ -77,14 +76,10 @@ void geometry_release_shot(Shot * & shot)
 		image_loader_cancel_request(&shot->image_loader_request);
 	} 
 
-	LOCK_RW(opencv)
-	{
-		cvReleaseMat(&(shot->projection));
-		cvReleaseMat(&(shot->translation));
-		cvReleaseMat(&(shot->internal_calibration)); 
-		shot = NULL; 
-	}
-	UNLOCK_RW(opencv);
+	cvReleaseMat(&(shot->projection));
+	cvReleaseMat(&(shot->translation));
+	cvReleaseMat(&(shot->internal_calibration)); 
+	shot = NULL; 
 }
 
 // release all allocated structures holding geometric data

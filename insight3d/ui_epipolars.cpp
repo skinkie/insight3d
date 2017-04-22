@@ -89,14 +89,10 @@ void ui_epipolars_display(const size_t shot_id, const size_t point_id)
 						ui_convert_xy_from_shot_to_opengl(x1, y1, x1, y1); 
 						ui_convert_xy_from_shot_to_opengl(x2, y2, x2, y2); 
 
-						LOCK_RW(opengl)
-						{
-							glBegin(GL_LINES);
-								glVertex3d(x1, y1, -1); 
-								glVertex3d(x2, y2, -1);
-							glEnd();
-						}
-						UNLOCK_RW(opengl);
+						glBegin(GL_LINES);
+							glVertex3d(x1, y1, -1); 
+							glVertex3d(x2, y2, -1);
+						glEnd();
 					}
 				}
 			}

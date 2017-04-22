@@ -62,7 +62,7 @@ void tool_image_colorize()
 
 			if (!img)
 			{
-				ATOMIC_RW(opencv, img = cvLoadImage(shot->image_filename); );
+				img = cvLoadImage(shot->image_filename);
 				if (!img) continue;
 			}
 
@@ -80,7 +80,7 @@ void tool_image_colorize()
 		if (img) 
 		{
 			printf("[%d]", loaded_img_counter);
-			ATOMIC_RW(opencv, cvReleaseImage(&img); );
+			cvReleaseImage(&img);
 			loaded_img_counter++;
 			
 			// debug
@@ -153,89 +153,87 @@ void tool_image_pinhole_deform()
 	if (!found) return;
 	const Shot * const first_shot = shots.data + first_calibrated;
 
-	LOCK_RW(opencv)
+	opencv_begin();
+
+	for ALL(shots, i)
 	{
-		for ALL(shots, i)
+		Shot * const shot = shots.data + i; 
+
+		// we only care about calibrated cameras
+		if (shot->calibrated && /*shot->resected // note temporary */ i > 0) 
 		{
-			Shot * const shot = shots.data + i; 
+			// compute homography 
+			CvMat * H = cvCreateMat(3, 3, CV_64F), * K_inv = cvCreateMat(3, 3, CV_64F);
+			cvInvert(shot->internal_calibration, K_inv);
+			cvMatMul(first_shot->internal_calibration, K_inv, H);
 
-			// we only care about calibrated cameras
-			if (shot->calibrated && /*shot->resected // note temporary */ i > 0) 
+			CvMat * A = cvCreateMat(3, 3, CV_64F);
+			cvMatMul(H, shot->internal_calibration, A); 
+
+			// replace this K with the one from first shot 
+			cvCopy(first_shot->internal_calibration, shot->internal_calibration);
+			shot->fovx = first_shot->fovx; 
+			shot->film_back = first_shot->film_back; 
+			shot->pp_x = first_shot->pp_x;
+			shot->pp_y = first_shot->pp_y;
+			shot->f = first_shot->f;
+			opencv_end(); 
+			geometry_calibration_from_decomposed_matrices(i);
+			opencv_begin();
+
+			// perform the deformation 
+			IplImage * full_image = NULL;
+			int cnter = 0; 
+			while (!full_image) 
 			{
-				// compute homography 
-				CvMat * H = cvCreateMat(3, 3, CV_64F), * K_inv = cvCreateMat(3, 3, CV_64F);
-				cvInvert(shot->internal_calibration, K_inv);
-				cvMatMul(first_shot->internal_calibration, K_inv, H);
-
-				CvMat * A = cvCreateMat(3, 3, CV_64F);
-				cvMatMul(H, shot->internal_calibration, A); 
-
-				// replace this K with the one from first shot 
-				cvCopy(first_shot->internal_calibration, shot->internal_calibration);
-				shot->fovx = first_shot->fovx; 
-				shot->film_back = first_shot->film_back; 
-				shot->pp_x = first_shot->pp_x;
-				shot->pp_y = first_shot->pp_y;
-				shot->f = first_shot->f;
-				UNLOCK_RW(opencv)
-				{
-					geometry_calibration_from_decomposed_matrices(i);
-				}
-				LOCK_RW(opencv);
-
-				// perform the deformation 
-				IplImage * full_image = NULL;
-				int cnter = 0; 
-				while (!full_image) 
-				{
-					full_image = cvLoadImage(shot->image_filename); 
-					cnter++;
-					if (cnter > 10) break;
-				}
-
-				if (cnter < 10) 
-				{
-					IplImage * deformed = cvCreateImage(cvSize(full_image->width, full_image->height), full_image->depth, full_image->nChannels);
-					for (int y = 0; y < deformed->height; y++) 
-					{
-						for (int x = 0; x < deformed->width; x++) 
-						{
-							((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3]   = 0;
-							((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+1] = 255;
-							((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+2] = 0;
-						}
-					}
-					cvWarpPerspective(full_image, deformed, H);
-					printf("deforming %s ... ", shot->image_filename);
-
-					cvSaveImage(shot->image_filename, deformed);
-					printf("done\n");
-
-					std::ofstream H_out((std::string(shot->image_filename) + ".H.txt").c_str());
-					for (int i = 0; i < 3; i++) 
-					{
-						for (int j = 0; j < 3; j++) 
-						{
-							H_out << OPENCV_ELEM(H, i, j) << " "; 
-						}
-						H_out << std::endl;
-					}
-					H_out.close(); 
-					
-					// update internal calibration matrix 
-					cvCopy(first_shot->internal_calibration, shot->internal_calibration);
-
-					cvReleaseImage(&deformed);
-				}
-				
-				// release data 
-				cvReleaseMat(&H);
-				cvReleaseMat(&K_inv);
-				cvReleaseImage(&full_image); 
+				full_image = cvLoadImage(shot->image_filename); 
+				cnter++;
+				if (cnter > 10) break;
 			}
+
+			if (cnter < 10) 
+			{
+				IplImage * deformed = cvCreateImage(cvSize(full_image->width, full_image->height), full_image->depth, full_image->nChannels);
+				for (int y = 0; y < deformed->height; y++) 
+				{
+					for (int x = 0; x < deformed->width; x++) 
+					{
+						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3]   = 0;
+						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+1] = 255;
+						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+2] = 0;
+					}
+				}
+				cvWarpPerspective(full_image, deformed, H);
+				printf("deforming %s ... ", shot->image_filename);
+
+				cvSaveImage(shot->image_filename, deformed);
+				printf("done\n");
+
+				std::ofstream H_out((std::string(shot->image_filename) + ".H.txt").c_str());
+				for (int i = 0; i < 3; i++) 
+				{
+					for (int j = 0; j < 3; j++) 
+					{
+						H_out << OPENCV_ELEM(H, i, j) << " "; 
+					}
+					H_out << std::endl;
+				}
+				H_out.close(); 
+				
+				// update internal calibration matrix 
+				cvCopy(first_shot->internal_calibration, shot->internal_calibration);
+
+				cvReleaseImage(&deformed);
+			}
+			
+			// release data 
+			cvReleaseMat(&H);
+			cvReleaseMat(&K_inv);
+			cvReleaseImage(&full_image); 
 		}
 	}
-	UNLOCK_RW(opencv);
+
+	opencv_end();
 }
 
 // register tool 

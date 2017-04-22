@@ -268,15 +268,15 @@ void ui_inspection_mouse_button_down()
 				ui_state.ground_phi_dragging_start = visualization_state.ground_phi; 
 				ui_state.ground_alpha_dragging_start = visualization_state.ground_alpha; 
 				break; 
-			case SDL_BUTTON_WHEELDOWN:
-				visualization_state.ground_distance += ui_state.ground_camera_movement_speed;
-				break;
-			case SDL_BUTTON_WHEELUP:
-				visualization_state.ground_distance = max_value(visualization_state.ground_distance - ui_state.ground_camera_movement_speed, CORE_PRECISION);
-				break;
+			//case SDL_BUTTON_WHEELDOWN:
+			//	visualization_state.ground_distance += ui_state.ground_camera_movement_speed;
+			//	break;
+			//case SDL_BUTTON_WHEELUP:
+			//	visualization_state.ground_distance = max_value(visualization_state.ground_distance - ui_state.ground_camera_movement_speed, CORE_PRECISION);
+			//	break;
 			case SDL_BUTTON_MIDDLE:
 				memcpy(ui_state.ground_POI_dragging_start, visualization_state.ground_POI, 3 * sizeof(double));
-				break;
+				break; 
 		}
 	}
 }

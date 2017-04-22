@@ -15,7 +15,7 @@ void cvComputeRQDecomposition(CvMat *matrixM, CvMat *matrixR, CvMat *matrixQ, Cv
 	double tmpEulerAngleX, tmpEulerAngleY, tmpEulerAngleZ;
 	
 	CV_FUNCNAME("cvRQDecomp3x3");
-    __BEGIN__;
+    __CV_BEGIN__;
 	
 	/* Validate parameters. */
 	if(matrixM == 0 || matrixR == 0 || matrixQ == 0)
@@ -194,7 +194,7 @@ void cvComputeRQDecomposition(CvMat *matrixM, CvMat *matrixR, CvMat *matrixQ, Cv
 	if(eulerAngles)
 		*eulerAngles = cvPoint3D64f(tmpEulerAngleX, tmpEulerAngleY, tmpEulerAngleZ);
 	
-	__END__;
+	__CV_END__;
 	
 	cvReleaseMat(&tmpMatrix1);
 	cvReleaseMat(&tmpMatrix2);

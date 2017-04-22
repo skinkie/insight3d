@@ -29,7 +29,7 @@
 #include "ui_core.h"
 
 void ui_list_update();
-void ui_next_shot(const GUI_Event_Descriptor event);
-void ui_prev_shot(const GUI_Event_Descriptor event);
+void ui_next_shot(GUI_Panel * panel); 
+void ui_prev_shot(GUI_Panel * panel);
 
 #endif

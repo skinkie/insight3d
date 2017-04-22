@@ -38,9 +38,6 @@
 #include "Commdlg.h"
 #endif
 
-// threading support 
-extern pthread_mutex_t tools_mutex;
-
 // tool event handlers
 typedef bool (* Tool_Process_Events)();
 typedef void (* Tool_Begin_Event_Handler)(); 
@@ -111,15 +108,15 @@ struct Tool
 // button type 
 enum Tool_Action_Type { TOOL_ACTION_NONE, TOOL_ACTION_SHOW, TOOL_ACTION_FILE_DIALOG, TOOL_ACTION_FUNCTION_CALL };
 
-// structure for menu items
-struct Tool_Menu_Item
+// structure for menu items 
+struct Tool_Menu_Item 
 {
-	bool set;
-	char * path;                        // path in menu
-	unsigned short int order[20];       // order of items in menu
-	Tool * tool;                        // pointer to represented tool
+	bool set; 
+	char * path;                        // path in menu 
+	unsigned short int order[20];       // order of items in menu 
+	Tool * tool;                        // pointer to represented tool 
 	Tool_Action_Type action_type;       // type of action to be triggered (show tool's panel, show file dialog, ...)
-	GUI_Panel * menu_item;              // pointer to GUI element
+	GUI_Panel * menu_item;              // pointer to GUI element 
 	Tool_Function_Call function_call;   // menu can trigger function call
 };
 
@@ -128,17 +125,11 @@ DYNAMIC_STRUCTURE_DECLARATIONS(Tool_Menu_Items, Tool_Menu_Item);
 // global structure encapsulating tools
 struct Tools_State
 {
-	// the following variables are not changed atomically,
-	// only their writes and reads are protected by mutex // <-- // TODO
 	GUI_Panel * application_menu;
 	Tool tools[100];
 	size_t current, count;
 	Tool_Menu_Items menu_items;
 	bool finalized;
-
-	// progressbar (accessed by the main thread and gui redering thread)
-	bool progressbar_show;
-	double progressbar_percentage;
 };
 
 extern Tools_State tools_state;
@@ -160,13 +151,13 @@ extern Tools_State tools_state;
 extern const int TOOL_ENUM_FIRST;
 
 // callback function activating a tool
-void tool_activate_handler(const GUI_Event_Descriptor event);
+void tool_activate_handler(GUI_Panel * event);
 
 // menu item pressed 
-void tool_menu_item_pressed(const GUI_Event_Descriptor event);
+void tool_menu_item_pressed(GUI_Panel * event);
 
 // tab button pressed 
-void tool_tab_button_pressed(const GUI_Event_Descriptor event);
+void tool_tab_button_pressed(GUI_Panel * event);
 
 // creates new UI tool 
 size_t tool_create(const UI_Mode mode_affinity, const char * const title, const char * const hint);

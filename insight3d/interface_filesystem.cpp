@@ -75,6 +75,7 @@ char * interface_filesystem_extract_filename(const char * filename)
 		char * p = ALLOC(char, len + 1); 
 		memcpy(p, filename, len + 1);
 		return p; 
+		// return strdup(filename);
 	}
 
 	// copy part of the filename 

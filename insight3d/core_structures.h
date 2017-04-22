@@ -26,7 +26,6 @@
 #define __CORE_STRUCTURES
 
 #include <cstdlib>
-#include "pthread.h"
 #include "core_debug.h"
 
 #ifndef SIZE_MAX
@@ -61,24 +60,6 @@
 // simple routines 
 bool dyn_found(const size_t index);
 
-// threading 
-extern pthread_mutex_t print_mutex;
-
-#define ATOMIC_DEBUG_IN(resource) // pthread_mutex_lock(&print_mutex); printf("%s\t(%s:%d) ", #resource, __FILE__ + 30, __LINE__); pthread_mutex_unlock(&print_mutex);
-#define ATOMIC_DEBUG_OUT() // pthread_mutex_lock(&print_mutex); printf("[*]\n"); pthread_mutex_unlock(&print_mutex);
-#define LOCK_RW(resource) ATOMIC_DEBUG_IN(resource); pthread_mutex_lock(&(resource##_mutex)); ATOMIC_DEBUG_OUT();
-#define LOCK_R(resource) ATOMIC_DEBUG_IN(resource); pthread_mutex_lock(&(resource##_mutex)); ATOMIC_DEBUG_OUT();
-#define LOCK(resource) LOCK_RW(resource)
-#define UNLOCK_RW(resource) pthread_mutex_unlock(&(resource##_mutex));
-#define UNLOCK_R(resource) pthread_mutex_unlock(&(resource##_mutex));
-#define UNLOCK(resource) UNLOCK_RW(resource)
-#define UPGRADE_TO_RW(resource)
-#define WAS_UNLOCKED_RW(resource) 
-#define WAS_UNLOCKED_R(resource)
-#define ATOMIC_RW(resource, code) LOCK_RW(resource); code; UNLOCK_RW(resource);
-#define ATOMIC_R(resource, code) LOCK_R(resource); code; UNLOCK_R(resource);
-#define ATOMIC(resource, code) ATOMIC_RW(resource, code)
-
 // template for safe dynamically allocated array (I for one welcome our new macro overlords...)
 #define DYNAMIC_STRUCTURE_DECLARATIONS(structure_name, structure_type) \
 struct structure_name { \
@@ -110,7 +91,6 @@ void dyn_free(structure_name * dynamic_structure) \
 \
 structure_name * dyn(structure_name * dynamic_structure, size_t index) \
 { \
-\
 	if (dynamic_structure->count <= index) dynamic_structure->count = index + 1; \
 \
 	if (index < dynamic_structure->allocated) \

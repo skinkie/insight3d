@@ -25,13 +25,32 @@
 #include "ui_list.h"
 
 // update the list of shots
-// note: currently doesn't do anything 
 void ui_list_update()
 {
+	// T
+	/*AG_TableBegin(ui_state.list);
+
+	for ALL(shots, i) 
+	{
+		const Shot * const shot = shots.data + i; 
+		
+		// checkout pointer to shot metadata 
+		UI_Shot_Meta * const meta = ui_check_shot_meta(i); 
+		if (INDEX_IS_SET(ui_state.current_calibration))
+		{
+			meta->list_id = AG_TableAddRow(ui_state.list, "%s:%d", shot->name, (shot->points.count > 0 ? 10 : 0) + (shot->partial_calibration ? 1 : 0));
+		}
+		else
+		{
+			meta->list_id = AG_TableAddRow(ui_state.list, "%s:%d", shot->name, (shot->points.count > 0 ? 10 : 0) + (shot->calibrated ? 1 : 0));
+		}
+	}
+
+	AG_TableEnd(ui_state.list);*/
 }
 
 // switch to next shot
-void ui_next_shot(const GUI_Event_Descriptor event)
+void ui_next_shot(GUI_Panel * panel)
 {
 	if (!INDEX_IS_SET(ui_state.current_shot))
 	{
@@ -51,7 +70,7 @@ void ui_next_shot(const GUI_Event_Descriptor event)
 }
 
 // switch to previous shot
-void ui_prev_shot(const GUI_Event_Descriptor event)
+void ui_prev_shot(GUI_Panel * panel)
 {
 	// note remove this in release 
 	if (!INDEX_IS_SET(ui_state.current_shot))

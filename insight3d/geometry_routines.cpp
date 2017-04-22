@@ -26,7 +26,6 @@
 
 // decompose projective matrix into rotation, translation and internal calibration matrix 
 // note check this
-// obtains LOCK_RW(opencv)
 bool geometry_calibration_from_P(const size_t shot_id)
 {
 	ASSERT(validate_shot(shot_id), "invalid shot suppiled when decomposing P"); 
@@ -50,41 +49,72 @@ bool geometry_calibration_from_P(const size_t shot_id)
 		shot->internal_calibration = opencv_create_matrix(3, 3);
 	}
 
-	LOCK_RW(opencv)
+	// decompose projection matrix
+	opencv_begin();
+	const bool finite = mvg_finite_projection_matrix_decomposition(
+		shot->projection,
+		shot->internal_calibration,
+		shot->rotation,
+		shot->translation
+	);
+
+	// we'll yet have to create a routine for decomposition of cameras at infinity
+	if (!finite) 
 	{
-		// decompose projection matrix
-		const bool finite = mvg_finite_projection_matrix_decomposition(
-			shot->projection,
-			shot->internal_calibration,
-			shot->rotation,
-			shot->translation
-		);
-
-		// we'll yet have to create a routine for decomposition of cameras at infinity
-		if (!finite) 
+		// if it wasn't calibrated before, deallocated newly calibrated matrices
+		if (!shot->calibrated) 
 		{
-			// if it wasn't calibrated before, deallocated newly calibrated matrices
-			if (!shot->calibrated) 
-			{
-				cvReleaseMat(&shot->rotation);
-				cvReleaseMat(&shot->translation);
-				cvReleaseMat(&shot->internal_calibration);
-			}
-
-			UNLOCK_RW(opencv);
-			return false; 
+			cvReleaseMat(&shot->rotation);
+			cvReleaseMat(&shot->translation);
+			cvReleaseMat(&shot->internal_calibration);
 		}
 
-		// * we have everything decomposed, now just recalculate helper vectors *
-
-		// decompose rotation matrix into euler angles for OpenGL
-		opencv_rotation_matrix_to_angles(shot->rotation, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]);
-		shot->R_euler[0] = -(shot->R_euler[0] + OPENCV_PI);
-		if (shot->R_euler[0] > 2 * OPENCV_PI) shot->R_euler[0] -= 2 * OPENCV_PI;
-		shot->R_euler[1] = -(shot->R_euler[1]);
-		shot->R_euler[2] = -(shot->R_euler[2]);
+		opencv_end();
+		return false; 
 	}
-	UNLOCK_RW(opencv);
+
+	// * we have everything decomposed, now just recalculate helper vectors *
+
+	// decompose rotation matrix into euler angles for OpenGL
+	opencv_rotation_matrix_to_angles(shot->rotation, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]);
+	shot->R_euler[0] = -(shot->R_euler[0] + OPENCV_PI);
+	if (shot->R_euler[0] > 2 * OPENCV_PI) shot->R_euler[0] -= 2 * OPENCV_PI;
+	shot->R_euler[1] = -(shot->R_euler[1]);
+	shot->R_euler[2] = -(shot->R_euler[2]);
+
+	// translation vector as C array
+	shot->T[0] = OPENCV_ELEM(shot->translation, 0, 0);
+	shot->T[1] = OPENCV_ELEM(shot->translation, 1, 0); 
+	shot->T[2] = OPENCV_ELEM(shot->translation, 2, 0); 
+	shot->T[3] = 1.0;
+	opencv_end();
+
+	// internal calibration holds principal points coordinates 
+	shot->pp_x = OPENCV_ELEM(shot->internal_calibration, 0, 2); 
+	shot->pp_y = OPENCV_ELEM(shot->internal_calibration, 1, 2); 
+
+	return true;
+}
+
+// assemble projective matrix from rotation, translation and internal calibration matrix 
+void geometry_calibration_from_decomposed_matrices(const size_t shot_id) 
+{
+	// todo add checking for allocated P... we probably want to be consistent with the previous function
+	ASSERT(validate_shot(shot_id), "assembling projection matrix for invalid shot");
+	Shot * const shot = shots.data + shot_id; 
+
+	opencv_begin();
+	shot->projection = opencv_create_matrix(3, 4);
+	mvg_assemble_projection_matrix(shot->internal_calibration, shot->rotation, shot->translation, shot->projection);
+
+	// * we have everything assembled, now just recalculate helper vectors *
+
+	// decompose rotation matrix into euler angles for OpenGL
+	opencv_rotation_matrix_to_angles(shot->rotation, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]);
+	shot->R_euler[0] = -(shot->R_euler[0] + OPENCV_PI);
+	if (shot->R_euler[0] > 2 * OPENCV_PI) shot->R_euler[0] -= 2 * OPENCV_PI;
+	shot->R_euler[1] = -(shot->R_euler[1]);
+	shot->R_euler[2] = -(shot->R_euler[2]);
 
 	// translation vector as C array
 	shot->T[0] = OPENCV_ELEM(shot->translation, 0, 0);
@@ -96,42 +126,7 @@ bool geometry_calibration_from_P(const size_t shot_id)
 	shot->pp_x = OPENCV_ELEM(shot->internal_calibration, 0, 2); 
 	shot->pp_y = OPENCV_ELEM(shot->internal_calibration, 1, 2); 
 
-	return true;
-}
-
-// assemble projective matrix from rotation, translation and internal calibration matrix 
-// obtains LOCK_RW(opencv)
-void geometry_calibration_from_decomposed_matrices(const size_t shot_id) 
-{
-	LOCK_RW(opencv)
-	{
-		// todo add checking for allocated P... we probably want to be consistent with the previous function
-		ASSERT(validate_shot(shot_id), "assembling projection matrix for invalid shot");
-		Shot * const shot = shots.data + shot_id; 
-
-		shot->projection = opencv_create_matrix(3, 4);
-		mvg_assemble_projection_matrix(shot->internal_calibration, shot->rotation, shot->translation, shot->projection);
-
-		// * we have everything assembled, now just recalculate helper vectors *
-
-		// decompose rotation matrix into euler angles for OpenGL
-		opencv_rotation_matrix_to_angles(shot->rotation, shot->R_euler[0], shot->R_euler[1], shot->R_euler[2]);
-		shot->R_euler[0] = -(shot->R_euler[0] + OPENCV_PI);
-		if (shot->R_euler[0] > 2 * OPENCV_PI) shot->R_euler[0] -= 2 * OPENCV_PI;
-		shot->R_euler[1] = -(shot->R_euler[1]);
-		shot->R_euler[2] = -(shot->R_euler[2]);
-
-		// translation vector as C array
-		shot->T[0] = OPENCV_ELEM(shot->translation, 0, 0);
-		shot->T[1] = OPENCV_ELEM(shot->translation, 1, 0); 
-		shot->T[2] = OPENCV_ELEM(shot->translation, 2, 0); 
-		shot->T[3] = 1.0;
-
-		// internal calibration holds principal points coordinates 
-		shot->pp_x = OPENCV_ELEM(shot->internal_calibration, 0, 2); 
-		shot->pp_y = OPENCV_ELEM(shot->internal_calibration, 1, 2); 
-	}
-	UNLOCK_RW(opencv); 
+	opencv_end();
 }
 
 // lattice test 

@@ -25,7 +25,7 @@
 #include "tool_selection.h"
 
 // tool's constants 
-const double TOOL_SELECTION_ZOOM_RATE = 1.2;
+const double TOOL_SELECTION_ZOOM_RATE = 1.3;
 const double TOOL_SELECTION_ZOOM_SNAPPING_MIN = 0.5 / TOOL_SELECTION_ZOOM_RATE + 0.001; 
 const double TOOL_SELECTION_ZOOM_SNAPPING_MAX = 0.5 * TOOL_SELECTION_ZOOM_RATE - 0.001;
 
@@ -158,7 +158,7 @@ void tool_selection_key()
 								best_shot_id = k;
 							}
 
-							ATOMIC_RW(opencv, cvReleaseMat(&polygon_mat); );
+							cvReleaseMat(&polygon_mat);
 						}
 					}
 				}
@@ -220,27 +220,17 @@ void tool_selection_key()
 					}
 				}
 
-				ATOMIC_RW(opencv, cvReleaseMat(&polygon_mat); );
+				cvReleaseMat(&polygon_mat);
 			}
 
 			// estimate the homography 
 			if (count_manually_entered + count_tracked >= 4)
 			{
 				// use RANSAC
-				CvMat * points1;
-				CvMat * points2;
-				CvMat * H;
-				CvMat * best_H;
-
-				LOCK_RW(opencv) 
-				{
-					points1 = opencv_create_matrix(2, 4); 
-					points2 = opencv_create_matrix(2, 4);
-					H = opencv_create_matrix(3, 3);
-					best_H = opencv_create_matrix(3, 3);
-				}
-				UNLOCK_RW(opencv);
-
+				CvMat 
+					* points1 = opencv_create_matrix(2, 4),
+					* points2 = opencv_create_matrix(2, 4);
+				CvMat * H = opencv_create_matrix(3, 3), * best_H = opencv_create_matrix(3, 3);
 				int inliers, best_inliers = -1;
 
 				for (size_t j = 0; j < count_manually_entered; j++) 
@@ -266,7 +256,7 @@ void tool_selection_key()
 						}
 					}
 
-					ATOMIC_RW(opencv, cvFindHomography(points1, points2, H); );
+					cvFindHomography(points1, points2, H);
 
 					// go through all points and count the number of inliers 
 					inliers = 0;
@@ -311,7 +301,7 @@ void tool_selection_key()
 
 					if (count_manually_entered >= 4)
 					{
-						ATOMIC_RW(opencv, cvCopy(H, best_H); );
+						cvCopy(H, best_H);
 						best_inliers = inliers;
 						break;
 					}
@@ -319,7 +309,7 @@ void tool_selection_key()
 					if (best_inliers == -1 || inliers > best_inliers)
 					{
 						best_inliers = inliers; 
-						ATOMIC_RW(opencv, cvCopy(H, best_H); );
+						cvCopy(H, best_H);
 					}
 				}
 
@@ -327,7 +317,7 @@ void tool_selection_key()
 				// printf("inliers: %d\n", best_inliers);
 				if (best_inliers >= 8)
 				{
-					ATOMIC_RW(opencv, cvCopy(best_H, H); );
+					cvCopy(best_H, H);
 
 					// now save estimated points 
 					for ALL(polygons.data[best_polygon_id].vertices, i)
@@ -374,14 +364,10 @@ void tool_selection_key()
 				}
 
 				// release resources
-				LOCK_RW(opencv)
-				{
-					cvReleaseMat(&points1);
-					cvReleaseMat(&points2);
-					cvReleaseMat(&H);
-					cvReleaseMat(&best_H);
-				}
-				UNLOCK_RW(opencv);
+				cvReleaseMat(&points1);
+				cvReleaseMat(&points2);
+				cvReleaseMat(&H);
+				cvReleaseMat(&best_H);
 			}
 
 			FREE(points1_id);
@@ -416,8 +402,8 @@ bool tool_selection_mouse_down(double x, double y, int button)
 
 	switch (button)
 	{
-		case SDL_BUTTON_WHEELUP:
-		{
+		case SDL_MOUSEWHEEL:
+		 if (y>=0) {
 			meta->view_zoom /= TOOL_SELECTION_ZOOM_RATE; 
 	
 			const double 
@@ -429,9 +415,9 @@ bool tool_selection_mouse_down(double x, double y, int button)
 			meta->view_center_y -= point_under_cursor_y - y;
 			snap_zoom = true; 
 			break;
-		}
+		//}
 
-		case SDL_BUTTON_WHEELDOWN:
+		//case SDL_BUTTON_WHEELDOWN:
 		{
 			meta->view_zoom *= TOOL_SELECTION_ZOOM_RATE;
 	
@@ -444,7 +430,7 @@ bool tool_selection_mouse_down(double x, double y, int button)
 			meta->view_center_y -= point_under_cursor_y - y;
 			snap_zoom = true;
 			break;
-		}
+		} }
 	}
 
 	if (snap_zoom) 
@@ -603,8 +589,7 @@ void debug_print_Ps()
 
 		/* decide which projection matrix we want to print (corrected or not?) */
 
-		CvMat * P; 
-		ATOMIC_RW(opencv, P = opencv_create_matrix(3, 4); );
+		CvMat * P = opencv_create_matrix(3, 4); 
 
 		if (!P) 
 		{
@@ -615,7 +600,7 @@ void debug_print_Ps()
 		if (false) 
 		{
 			// just copy the uncorrected matrix
-			ATOMIC_RW(opencv, cvCopy(shot->projection, P); );
+			cvCopy(shot->projection, P);
 		}
 		else
 		{
@@ -629,8 +614,7 @@ void debug_print_Ps()
 			if (fp)
 			{
 				// load homography
-				CvMat * H;
-				ATOMIC_RW(opencv, H = opencv_create_matrix(3, 3); );
+				CvMat * H = opencv_create_matrix(3, 3);
 
 				for (int i = 0; i < 9; i++)
 				{
@@ -641,19 +625,14 @@ void debug_print_Ps()
 				}
 
 				fclose(fp);
-
-				LOCK_RW(opencv) 
-				{
-					cvInvert(H, H);
-					cvMatMul(H, shot->projection, P);
-					cvReleaseMat(&H);
-				}
-				UNLOCK_RW(opencv);
+				cvInvert(H, H);
+				cvMatMul(H, shot->projection, P);
+				cvReleaseMat(&H);
 			}
 			else
 			{
 				printf("ERROR opening file %s, using uncorrected matrix.\n", fn);
-				ATOMIC_RW(opencv, cvCopy(shot->projection, P); );
+				cvCopy(shot->projection, P);
 			}
 		}
 
@@ -669,14 +648,8 @@ void debug_print_Ps()
 		Ps_out << std::endl;
 
 		// print it's pseudoinverse
-		CvMat * P_inv;
-
-		LOCK_RW(opencv)
-		{
-			P_inv = opencv_create_matrix(4, 3);
-			cvInvert(P, P_inv, CV_SVD);
-		}
-		UNLOCK_RW(opencv);
+		CvMat * P_inv = opencv_create_matrix(4, 3);
+		cvInvert(P, P_inv, CV_SVD);
 
 		for (int i = 0; i < P_inv->rows; i++)
 		{

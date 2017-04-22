@@ -46,19 +46,15 @@ void visualization_export_opengl_matrices()
 // prepare inspection projection 
 void visualization_prepare_inspection_projection(double fovx) 
 {
-	LOCK(opengl) 
-	{
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		const double ratio = gui_get_width(ui_state.gl) / (double)gui_get_height(ui_state.gl);
-		const double fovy = fovx / ratio;
-		gluPerspective(fovx, ratio, 0.1, 1000);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	const double ratio = gui_get_width(ui_state.gl) / (double)gui_get_height(ui_state.gl);
+	const double fovy = fovx / ratio;
+	//gluPerspective(fovx, ratio, 0.1, 1000);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-		glEnable(GL_DEPTH_TEST);
-	}
-	UNLOCK(opengl);
+	glEnable(GL_DEPTH_TEST);
 }
 
 // calculate the view_zoom factor in x axis // todo write better description 
@@ -511,311 +507,303 @@ void visualization_selection_box(double x1, double y1, double x2, double y2)
 // conditions: visualization_process_data has to be run before the first time calling this function on modified (or newly constructed) data
 void visualization_cameras(const Shots shots, const double world_scale /*= 1*/)
 {
-	LOCK(opengl)
+	// if we have something (finite, of course) to show 
+	if (visualization_state.finite_shots_count)
 	{
-		// if we have something (finite, of course) to show 
-		if (visualization_state.finite_shots_count)
-		{
-			// we'll display all the camera centers as points
-			// idea what about using clustering or ransac to group cameras?
-			opengl_drawing_style(UI_STYLE_CAMERA);
-			const double camera_size = 6;
+		// we'll display all the camera centers as points
+		// idea what about using clustering or ransac to group cameras?
+		opengl_drawing_style(UI_STYLE_CAMERA);
+		const double camera_size = 6;
 
-			for (size_t i = 0; i < shots.count; i++)
+		for (size_t i = 0; i < shots.count; i++)
+		{
+			const bool current = (INDEX_IS_SET(ui_state.current_shot) && ui_state.current_shot == i);
+
+			if (!nearly_zero(shots.data[i].T[W]))
 			{
-				const bool current = (INDEX_IS_SET(ui_state.current_shot) && ui_state.current_shot == i);
+				if (!current) glColor3f(0.9, 0.9, 0.9); else glColor3f(0.9, 0.45, 0.45);
+				glBegin(GL_POLYGON);
+				
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
+				);
 
-				if (!nearly_zero(shots.data[i].T[W]))
-				{
-					if (!current) glColor3f(0.9, 0.9, 0.9); else glColor3f(0.9, 0.45, 0.45);
-					glBegin(GL_POLYGON);
-					
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
-					);
+				glEnd();
 
-					glEnd();
+				if (!current) glColor3f(0.75, 0.75, 0.75); else glColor3f(0.75, 0.375, 0.374);
+				glBegin(GL_POLYGON);
 
-					if (!current) glColor3f(0.75, 0.75, 0.75); else glColor3f(0.75, 0.375, 0.374);
-					glBegin(GL_POLYGON);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
-					);
+				glEnd();
 
-					glEnd();
+				glBegin(GL_POLYGON);
 
-					glBegin(GL_POLYGON);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
-					);
+				glEnd();
 
-					glEnd();
+				if (!current) glColor3f(0.8, 0.8, 0.8); else glColor3f(0.8, 0.4, 0.4);
+				glBegin(GL_POLYGON);
 
-					if (!current) glColor3f(0.8, 0.8, 0.8); else glColor3f(0.8, 0.4, 0.4);
-					glBegin(GL_POLYGON);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
-					);
+				glEnd();
 
-					glEnd();
+				/*if (!current) glColor3f(1, 1, 1); else glColor3f(1, 0.5, 0.5);
+				glBegin(GL_POLYGON);
 
-					/*if (!current) glColor3f(1, 1, 1); else glColor3f(1, 0.5, 0.5);
-					glBegin(GL_POLYGON);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_00[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_00[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_00[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_01[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_01[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_01[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_11[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_11[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_11[Z], Z)
-					);
+				glVertex3d(
+					world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
+					world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
+				);
 
-					glVertex3d(
-						world_scale * visualization_normalize(shots.data[i].visualization_T[X] + camera_size * shots.data[i].visualization_pyr_10[X], X),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Y] + camera_size * shots.data[i].visualization_pyr_10[Y], Y),
-						world_scale * visualization_normalize(shots.data[i].visualization_T[Z] + camera_size * shots.data[i].visualization_pyr_10[Z], Z)
-					);
-
-					glEnd();*/
-				}
+				glEnd();*/
 			}
+		}
 
-			glEnd();
-		}
-		else
-		{
-			// there are either no cameras or all are at infinity 
-		}
+		glEnd();
 	}
-	UNLOCK(opengl);
+	else
+	{
+		// there are either no cameras or all are at infinity 
+	}
 }
 
 // display vertices using normalization from visualization_state
 void visualization_vertices(const Vertices & vertices, double world_scale /*= 1*/)
 {
-	LOCK(opengl)
+	opengl_drawing_style(UI_STYLE_VERTEX);
+
+	glDisable(GL_BLEND);
+	glBegin(GL_POINTS);
+
+	// go through all vertices
+	for ALL(vertices, i)
 	{
-		opengl_drawing_style(UI_STYLE_VERTEX);
+		// process only reconstructed vertices
+		if (!vertices.data[i].reconstructed) continue;
 
-		glDisable(GL_BLEND);
-		glBegin(GL_POINTS);
-
-		// go through all vertices
-		for ALL(vertices, i)
+		// don't display hidden vertices
+		if (vertices.data[i].group)
 		{
-			// process only reconstructed vertices
-			if (!vertices.data[i].reconstructed) continue;
-
-			// don't display hidden vertices
-			if (vertices.data[i].group)
-			{
-				ASSERT_IS_SET(ui_state.groups, vertices.data[i].group);
-				if (ui_state.groups.data[vertices.data[i].group].hidden) continue;
-			}
-		
-			// optionally skip generated vertices 
-			if (option_hide_automatic && vertices.data[i].vertex_type == GEOMETRY_VERTEX_AUTO) continue;
-
-			// pick appropriate style 
-			if (!vertices.data[i].selected)
-			{
-				opengl_drawing_style(UI_STYLE_VERTEX);
-
-				if (vertices.data[i].color[0] > 0 || vertices.data[i].color[1] > 0 || vertices.data[i].color[2] > 0)
-				{
-					glColor4f(vertices.data[i].color[0], vertices.data[i].color[1], vertices.data[i].color[2], 1);
-				}
-				else if (vertices.data[i].group)
-				{
-					if (vertices.data[i].group == 1) 
-					{
-						glColor3d(0.52, 0.83, 0.52);
-					}
-				}
-			}
-			else
-			{
-				opengl_drawing_style(UI_STYLE_SELECTED_VERTEX);
-			}
-
-			// display them in normalized space
-			glVertex3d(
-				world_scale * visualization_normalize(vertices.data[i].x, X),
-				world_scale * visualization_normalize(vertices.data[i].y, Y),
-				world_scale * visualization_normalize(vertices.data[i].z, Z)
-			);
+			ASSERT_IS_SET(ui_state.groups, vertices.data[i].group);
+			if (ui_state.groups.data[vertices.data[i].group].hidden) continue;
 		}
+	
+		// optionally skip generated vertices 
+		if (option_hide_automatic && vertices.data[i].vertex_type == GEOMETRY_VERTEX_AUTO) continue;
 
-		glEnd(); 
-
-		const double normal_len = 0.1;
-
-		// glColor4f(1, 1, 1, 0.3);
-		glBegin(GL_LINES);
-
-		// go through all vertices
-		for ALL(vertices, i)
+		// pick appropriate style 
+		if (!vertices.data[i].selected)
 		{
-			// process only reconstructed vertices
-			if (!vertices.data[i].reconstructed) continue;
+			opengl_drawing_style(UI_STYLE_VERTEX);
 
-			// don't display hidden vertices
-			if (vertices.data[i].group)
+			if (vertices.data[i].color[0] > 0 || vertices.data[i].color[1] > 0 || vertices.data[i].color[2] > 0)
 			{
-				ASSERT_IS_SET(ui_state.groups, vertices.data[i].group);
-				if (ui_state.groups.data[vertices.data[i].group].hidden) continue;
+				glColor4f(vertices.data[i].color[0], vertices.data[i].color[1], vertices.data[i].color[2], 1);
 			}
-		
-			// optionally skip generated vertices 
-			if (option_hide_automatic && vertices.data[i].vertex_type == GEOMETRY_VERTEX_AUTO) continue;
-
-			// pick appropriate style 
-			if (!vertices.data[i].selected)
+			else if (vertices.data[i].group)
 			{
-				opengl_drawing_style(UI_STYLE_VERTEX);
-
-				if (vertices.data[i].color[0] > 0 || vertices.data[i].color[1] > 0 || vertices.data[i].color[2] > 0)
+				if (vertices.data[i].group == 1) 
 				{
-					glColor4f(vertices.data[i].color[0], vertices.data[i].color[1], vertices.data[i].color[2], 1.0);
-				}
-				else if (vertices.data[i].group)
-				{
-					if (vertices.data[i].group == 1) // debug ?
-					{
-						glColor3d(0.52, 0.83, 0.52);
-					}
-				}
-			}
-			else
-			{
-				opengl_drawing_style(UI_STYLE_SELECTED_VERTEX);
-			}
-
-			// * display the direction of the normal *
-
-			glVertex3d(
-				world_scale * (visualization_normalize(vertices.data[i].x, X) + normal_len * vertices.data[i].nx),
-				world_scale * (visualization_normalize(vertices.data[i].y, Y) + normal_len * vertices.data[i].ny),
-				world_scale * (visualization_normalize(vertices.data[i].z, Z) + normal_len * vertices.data[i].nz)
-			);
-
-			glVertex3d(
-				world_scale * visualization_normalize(vertices.data[i].x, X), 
-				world_scale * visualization_normalize(vertices.data[i].y, Y),
-				world_scale * visualization_normalize(vertices.data[i].z, Z)
-			);
-		}
-
-		glEnd();
-
-		// go through all detected edges 
-		/*glLineWidth(1.0);
-		glBegin(GL_LINES);
-		glColor3d(1, 1, 1);
-		for (std::map<int, std::map<int, unsigned int> >::iterator edge_i1 = detected_edges.begin(); edge_i1 != detected_edges.end(); ++edge_i1)
-		{
-			for (std::map<int, unsigned int>::iterator edge_i2 = edge_i1->second.begin(); edge_i2 != edge_i1->second.end(); ++edge_i2) 
-			{
-				if (edge_i2->second >= 1)
-				{
-					size_t 
-						e1 = edge_i1->first,
-						e2 = edge_i2->first
-					;
-
-					glVertex3d(
-						world_scale * visualization_normalize(vertices.data[e1].x, X), 
-						world_scale * visualization_normalize(vertices.data[e1].y, Y), 
-						world_scale * visualization_normalize(vertices.data[e1].z, Z)
-					);
-
-					glVertex3d(
-						world_scale * visualization_normalize(vertices.data[e2].x, X),
-						world_scale * visualization_normalize(vertices.data[e2].y, Y), 
-						world_scale * visualization_normalize(vertices.data[e2].z, Z)
-					);
+					glColor3d(0.52, 0.83, 0.52);
 				}
 			}
 		}
-		glEnd();*/
+		else
+		{
+			opengl_drawing_style(UI_STYLE_SELECTED_VERTEX);
+		}
+
+		// display them in normalized space
+		glVertex3d(
+			world_scale * visualization_normalize(vertices.data[i].x, X),
+			world_scale * visualization_normalize(vertices.data[i].y, Y),
+			world_scale * visualization_normalize(vertices.data[i].z, Z)
+		);
 	}
-	UNLOCK(opengl);
+
+	glEnd(); 
+
+	const double normal_len = 0.1;
+
+	// glColor4f(1, 1, 1, 0.3);
+	glBegin(GL_LINES);
+
+	// go through all vertices
+	for ALL(vertices, i)
+	{
+		// process only reconstructed vertices
+		if (!vertices.data[i].reconstructed) continue;
+
+		// don't display hidden vertices
+		if (vertices.data[i].group)
+		{
+			ASSERT_IS_SET(ui_state.groups, vertices.data[i].group);
+			if (ui_state.groups.data[vertices.data[i].group].hidden) continue;
+		}
+	
+		// optionally skip generated vertices 
+		if (option_hide_automatic && vertices.data[i].vertex_type == GEOMETRY_VERTEX_AUTO) continue;
+
+		// pick appropriate style 
+		if (!vertices.data[i].selected)
+		{
+			opengl_drawing_style(UI_STYLE_VERTEX);
+
+			if (vertices.data[i].color[0] > 0 || vertices.data[i].color[1] > 0 || vertices.data[i].color[2] > 0)
+			{
+				glColor4f(vertices.data[i].color[0], vertices.data[i].color[1], vertices.data[i].color[2], 1.0);
+			}
+			else if (vertices.data[i].group)
+			{
+				if (vertices.data[i].group == 1) // debug ?
+				{
+					glColor3d(0.52, 0.83, 0.52);
+				}
+			}
+		}
+		else
+		{
+			opengl_drawing_style(UI_STYLE_SELECTED_VERTEX);
+		}
+
+		// * display the direction of the normal *
+
+		glVertex3d(
+			world_scale * (visualization_normalize(vertices.data[i].x, X) + normal_len * vertices.data[i].nx),
+			world_scale * (visualization_normalize(vertices.data[i].y, Y) + normal_len * vertices.data[i].ny),
+			world_scale * (visualization_normalize(vertices.data[i].z, Z) + normal_len * vertices.data[i].nz)
+		);
+
+		glVertex3d(
+			world_scale * visualization_normalize(vertices.data[i].x, X), 
+			world_scale * visualization_normalize(vertices.data[i].y, Y),
+			world_scale * visualization_normalize(vertices.data[i].z, Z)
+		);
+	}
+
+	glEnd();
+
+	// go through all detected edges 
+	/*glLineWidth(1.0);
+	glBegin(GL_LINES);
+	glColor3d(1, 1, 1);
+	for (std::map<int, std::map<int, unsigned int> >::iterator edge_i1 = detected_edges.begin(); edge_i1 != detected_edges.end(); ++edge_i1)
+	{
+		for (std::map<int, unsigned int>::iterator edge_i2 = edge_i1->second.begin(); edge_i2 != edge_i1->second.end(); ++edge_i2) 
+		{
+			if (edge_i2->second >= 1)
+			{
+				size_t 
+					e1 = edge_i1->first,
+					e2 = edge_i2->first
+				;
+
+				glVertex3d(
+					world_scale * visualization_normalize(vertices.data[e1].x, X), 
+					world_scale * visualization_normalize(vertices.data[e1].y, Y), 
+					world_scale * visualization_normalize(vertices.data[e1].z, Z)
+				);
+
+				glVertex3d(
+					world_scale * visualization_normalize(vertices.data[e2].x, X),
+					world_scale * visualization_normalize(vertices.data[e2].y, Y), 
+					world_scale * visualization_normalize(vertices.data[e2].z, Z)
+				);
+			}
+		}
+	}
+	glEnd();*/
 }
 
 // display reconstructed polygons 
 void visualization_polygons(const Polygons_3d & polygons, const double world_scale /*= 1*/)
 {
 	// set drawing style
-	ATOMIC(opengl, opengl_drawing_style(UI_STYLE_POLYGON); );
+	opengl_drawing_style(UI_STYLE_POLYGON);
 
 	// go through all polygons 
 	for ALL(polygons, i) 
@@ -836,68 +824,64 @@ void visualization_polygons(const Polygons_3d & polygons, const double world_sca
 		}
 		
 		// prepare texture mapping
-		LOCK(opengl)
+		if (texture_ready) 
 		{
-			if (texture_ready) 
-			{
-				glBindTexture(GL_TEXTURE_2D, texture_id);
-				glBegin(GL_POLYGON);
-			}
-			else
-			{
-				glBegin(GL_LINE_STRIP);
-			}
-		
-			// go through all of it's vertices
-			size_t first = 0;
-			bool first_set = false;
-			size_t v = 0;
-			for ALL(polygon->vertices, j)
-			{
-				const size_t vertex_id = polygon->vertices.data[j].value;
-				ASSERT_IS_SET(vertices, vertex_id); 
-				if (!first_set)
-				{
-					first_set = true; 
-					first = vertex_id;
-				}
-
-				if (texture_ready)
-				{
-					glTexCoord2d(tx + polygon->texture_coords[2 * v + 0] * (sx - tx), ty + polygon->texture_coords[2 * v + 1] * (sy - ty));
-				}
-				
-				glVertex3d(
-					world_scale * visualization_normalize(vertices.data[vertex_id].x, X), 
-					world_scale * visualization_normalize(vertices.data[vertex_id].y, Y), 
-					world_scale * visualization_normalize(vertices.data[vertex_id].z, Z)
-				);
-
-				v++;
-			}
-
-			if (first_set)
-			{
-				if (texture_ready)
-				{
-					glTexCoord2d(tx + polygon->texture_coords[0] * (sx - tx), ty + polygon->texture_coords[1] * (sy - ty));
-				}
-
-				glVertex3d(
-					world_scale * visualization_normalize(vertices.data[first].x, X), 
-					world_scale * visualization_normalize(vertices.data[first].y, Y), 
-					world_scale * visualization_normalize(vertices.data[first].z, Z)
-				);
-			}
-
-			glEnd();
-			
-			if (texture_ready) 
-			{
-				glBindTexture(GL_TEXTURE_2D, 0);
-			}
+			glBindTexture(GL_TEXTURE_2D, texture_id);
+			glBegin(GL_POLYGON);
 		}
-		UNLOCK(opengl);
+		else
+		{
+			glBegin(GL_LINE_STRIP);
+		}
+	
+		// go through all of it's vertices
+		size_t first = 0;
+		bool first_set = false;
+		size_t v = 0;
+		for ALL(polygon->vertices, j)
+		{
+			const size_t vertex_id = polygon->vertices.data[j].value;
+			ASSERT_IS_SET(vertices, vertex_id); 
+			if (!first_set)
+			{
+				first_set = true; 
+				first = vertex_id;
+			}
+
+			if (texture_ready)
+			{
+				glTexCoord2d(tx + polygon->texture_coords[2 * v + 0] * (sx - tx), ty + polygon->texture_coords[2 * v + 1] * (sy - ty));
+			}
+			
+			glVertex3d(
+				world_scale * visualization_normalize(vertices.data[vertex_id].x, X), 
+				world_scale * visualization_normalize(vertices.data[vertex_id].y, Y), 
+				world_scale * visualization_normalize(vertices.data[vertex_id].z, Z)
+			);
+
+			v++;
+		}
+
+		if (first_set)
+		{
+			if (texture_ready)
+			{
+				glTexCoord2d(tx + polygon->texture_coords[0] * (sx - tx), ty + polygon->texture_coords[1] * (sy - ty));
+			}
+
+			glVertex3d(
+				world_scale * visualization_normalize(vertices.data[first].x, X), 
+				world_scale * visualization_normalize(vertices.data[first].y, Y), 
+				world_scale * visualization_normalize(vertices.data[first].z, Z)
+			);
+		}
+
+		glEnd();
+		
+		if (texture_ready) 
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 	}
 }
 
@@ -906,7 +890,7 @@ void visualization_contours(const Shots & shots, const Vertices & vertices, cons
 {
 	opengl_drawing_style(UI_STYLE_CONTOUR);
 
-	// go through all shots
+	// go through all shots 
 	for ALL(shots, i)
 	{
 		const Shot * const shot = shots.data + i;
@@ -1045,12 +1029,8 @@ void visualization_shot_user_camera(const double world_scale /*= 1*/)
 // show shot
 void visualization_shot_image(Shot & shot)
 {
-	LOCK(opengl) 
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-	UNLOCK(opengl);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// display the image as an OpenGL texture over the whole window
 	if (
@@ -1094,65 +1074,61 @@ void visualization_shot_image(Shot & shot)
 		GLuint full_texture, low_texture; 
 		if (image_loader_opengl_upload_ready_dual(shot.image_loader_request, &full_texture, &low_texture))
 		{
-			LOCK(opengl)
+			if (!full_texture) 
 			{
-				if (!full_texture) 
-				{
-					visualization_state.continuous_loading_alpha = 1.0; 
-					glColor4f(1, 1, 1, 1);
-					glBindTexture(GL_TEXTURE_2D, low_texture);
-					glBegin(GL_POLYGON);
-						glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
-						glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
-						glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
-						glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
-					glEnd();
-				}
-				else if (visualization_state.continuous_loading_alpha >= 0.001) 
-				{
-					visualization_state.continuous_loading_alpha -= 0.1; 
-					if (visualization_state.continuous_loading_alpha < 0) visualization_state.continuous_loading_alpha = 0;
-
-					glColor4f(1, 1, 1, 1);
-					glBindTexture(GL_TEXTURE_2D, full_texture);
-					glBegin(GL_POLYGON); 
-						glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
-						glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
-						glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
-						glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
-					glEnd();
-
-					if (low_texture) 
-					{
-						glColor4d(1, 1, 1, visualization_state.continuous_loading_alpha);
-						glBindTexture(GL_TEXTURE_2D, low_texture);
-						glBegin(GL_POLYGON); 
-							glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
-							glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
-							glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
-							glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
-						glEnd();
-					}
-				}
-				else
-				{
-					glBindTexture(GL_TEXTURE_2D, full_texture);
-					glColor4f(1, 1, 1, 1);
-					glBegin(GL_POLYGON); 
-						glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
-						glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
-						glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
-						glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
-					glEnd();
-				}
-
-				glBindTexture(GL_TEXTURE_2D, 0);
+				visualization_state.continuous_loading_alpha = 1.0; 
+				glColor4f(1, 1, 1, 1);
+				glBindTexture(GL_TEXTURE_2D, low_texture);
+				glBegin(GL_POLYGON);
+					glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
+					glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
+					glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
+					glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
+				glEnd();
 			}
-			UNLOCK(opengl);
+			else if (visualization_state.continuous_loading_alpha >= 0.001) 
+			{
+				visualization_state.continuous_loading_alpha -= 0.1; 
+				if (visualization_state.continuous_loading_alpha < 0) visualization_state.continuous_loading_alpha = 0;
+
+				glColor4f(1, 1, 1, 1);
+				glBindTexture(GL_TEXTURE_2D, full_texture);
+				glBegin(GL_POLYGON); 
+					glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
+					glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
+					glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
+					glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
+				glEnd();
+
+				if (low_texture) 
+				{
+					glColor4d(1, 1, 1, visualization_state.continuous_loading_alpha);
+					glBindTexture(GL_TEXTURE_2D, low_texture);
+					glBegin(GL_POLYGON); 
+						glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
+						glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
+						glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
+						glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
+					glEnd();
+				}
+			}
+			else
+			{
+				glBindTexture(GL_TEXTURE_2D, full_texture);
+				glColor4f(1, 1, 1, 1);
+				glBegin(GL_POLYGON); 
+					glTexCoord2f(0, 1); glVertex3f(-1, -1, -1);
+					glTexCoord2f(1, 1); glVertex3f(1, -1, -1);
+					glTexCoord2f(1, 0); glVertex3f(1, 1, -1);
+					glTexCoord2f(0, 0); glVertex3f(-1, 1, -1);
+				glEnd();
+			}
+
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
 
-	ATOMIC(opengl, glDisable(GL_BLEND); );
+	glDisable(GL_BLEND);
 }
 
 // show dualview 
@@ -1163,7 +1139,7 @@ void visualization_show_dualview(size_t current_shot_id, size_t dual_shot_id, co
 
 	// decoide, where to display it
 	double tx, ty; 
-	if (current_shot->width > current_shot->height) 
+	if (current_shot->width >= current_shot->height) 
 	{
 		tx = 0;
 		ty = -2; 
@@ -1212,10 +1188,10 @@ void visualization_show_dualview(size_t current_shot_id, size_t dual_shot_id, co
 			b = b - (int)b;
 
 			// draw correspondence
-			glLineWidth((float)(1 + 1)); //weight));
-			if (true) //!highlighted) 
+			glLineWidth((float)(1 + weight));
+			if (!highlighted) 
 			{
-				/*if (weight > 0)*/ glColor4d(r, g, b, 0.6); // 0.2 + 0.8 * weight); // else glColor4d(1, 1, 1, 0.3);
+				if (weight > 0) glColor4d(r, g, b, 0.2 + 0.8 * weight); else glColor4d(1, 1, 1, 0.3);
 			}
 			else
 			{
@@ -1239,7 +1215,6 @@ void visualization_show_dualview(size_t current_shot_id, size_t dual_shot_id, co
 			{
 				glColor4d(1, 0, 1, 1);
 			}
-			glColor4d(1, 1, 1, 1);
 			glBegin(GL_POINTS);
 				glVertex3d(x, y, -1);
 				glVertex3d(x_prime + tx, y_prime + ty, -1);
@@ -1527,7 +1502,7 @@ void visualization_inspection_user_camera(double world_scale /*= 1*/)
 		);
 
 		// opengl transformation
-		gluLookAt(
+		/*gluLookAt(
 			world_scale * visualization_normalize(center[X], X),
 			world_scale * visualization_normalize(center[Y], Y),
 			world_scale * visualization_normalize(center[Z], Z),
@@ -1537,7 +1512,7 @@ void visualization_inspection_user_camera(double world_scale /*= 1*/)
 			up[X],
 			up[Y], 
 			up[Z]
-		);
+		);*/
 	}
 }
 

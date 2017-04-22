@@ -67,7 +67,7 @@ struct UI_Shot_Meta
 	// special shot properties 
 	double view_center_x, view_center_y, view_zoom;    // zooming and scrolling 
 
-	// GUI properties 
+	// Agar GUI properties 
 	int list_id;    // id in table displaying the list of all pictures
 }; 
 
@@ -95,8 +95,8 @@ UI_Section_Meta * ui_check_section_meta(UI_Section_Meta * & meta);
 // create new GUI item structure for shot 
 UI_Shot_Meta * ui_check_shot_meta(size_t shot_id);
 
-// initialize GUI library
-bool ui_library_initialization();
+// initialize Agar GUI library
+bool ui_agar_initialization();
 
 // OpenGL settings 
 bool ui_opengl_initialization();

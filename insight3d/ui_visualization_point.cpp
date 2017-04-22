@@ -121,6 +121,7 @@ void visualization_point_reprojection(const size_t shot_id, const size_t point_i
 	// calculate the reprojection 
 	double reprojection[2]; 
 	const size_t vertex_id = shots.data[shot_id].points.data[point_id].vertex;
+	opencv_begin(); 
 	opencv_vertex_projection_visualization(
 		shots.data[shot_id].projection, 
 		vertices.data[vertex_id].x,
@@ -128,6 +129,7 @@ void visualization_point_reprojection(const size_t shot_id, const size_t point_i
 		vertices.data[vertex_id].z,
 		reprojection
 	);
+	opencv_end();
 
 	// convert coordinates to percentage
 	reprojection[0] /= shots.data[shot_id].width; 
@@ -153,11 +155,13 @@ void visualization_point_reprojection_calibration(
 
 	// calculate the reprojection 
 	double reprojection[2]; 
+	opencv_begin(); 
 	opencv_vertex_projection_visualization(
 		calibration->Ps.data[P_id].P,
 		calibration->Xs.data[X_id].X,
 		reprojection
 	);
+	opencv_end();
 
 	// convert coordinates to percentage
 	reprojection[0] /= shots.data[shot_id].width; 

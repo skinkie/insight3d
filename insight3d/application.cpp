@@ -43,8 +43,8 @@ bool debug_initialize()
 bool initialization()
 {
 	// GNU GPL license notification
-	printf("insight3d 0.5, 2007-2010\n");
-	printf("licensed under GNU AGPL 3\n\n");
+	printf("insight3d 0.3.3, 2007-2010\n");
+	//printf("licensed under GNU AGPL 3\n\n");  // dosen't fit to the haeder
 
 	// note this crashes in debug on MSVC (2008 EE), for now avoid using strdup
 	/*char * s = strdup("ahoy"); 
@@ -58,93 +58,125 @@ bool initialization()
 	FREE(p);
 	printf("ok\n"); // if we're still alive, everything's fine
 
-	// initialize application structures 
-	printf("initializing application structures ... "); 
-	fflush(stdout);
-	bool state = 
+	// initialize the whole package
+	return 
 		core_debug_initialize() && 
 		debug_initialize() && // todo merge this with core_debug
 		core_initialize() &&
 		geometry_initialize() && 
 		image_loader_initialize(4, 32) &&
 		ui_initialize() &&
-		visualization_initialize() && 
-		ui_library_initialization() &&
-		ui_create() && 
-		image_loader_start_thread();
-
-	printf("ok\n");
-
-	// initialize the whole package
-	return state; 
+		visualization_initialize() &&
+		ui_create()
+	;
 }
 
-static pthread_t gui_rendering_thread;
-
 // main loop 
+// #define USE_AGAR_EVENTLOOP 1
+#ifdef USE_AGAR_EVENTLOOP
+bool main_loop()
+{
+	AG_EventLoop();
+	return true;
+}
+#else
+extern "C" struct ag_objectq agTimeoutObjQ;
 bool main_loop()
 {
 	bool is_active = true;
 	Uint32 timestamp1 = SDL_GetTicks(), timestamp2 = 0;
 
-	// create rendering thread 
-	printf("creating UI thread ... \n"); 
-
-	// start gui rendering thread 
-	gui_start_rendering_thread();
-
-	// respond to application events 
 	while (core_state.running)
 	{
-		GUI_Event_Descriptor event;
+		timestamp2 = SDL_GetTicks();
+		delta_time = timestamp2 - timestamp1;
 
-		// process event 
-		LOCK(geometry)
+		// if the window is active, do some stuff
+		if (is_active)
 		{
-			if (gui_poll_event(&event))
+			// redraw scene
+			gui_calculate_coordinates();
+			gui_render();
+
+			// let opencv do some redrawing 
+			cvWaitKey(1);
+
+			// switch SDL buffers
+			SDL_GL_SwapWindow(gui_context.sdl_window);
+		}
+
+		SDL_Event event;
+
+		// handle events in queue
+		while (SDL_PollEvent(&event))
+		{
+			if (!gui_resolve_event(&event))
 			{
-				// is this a GUI event?
-				if (event.handler) 
+				switch (event.type)
 				{
-					event.handler(event);
-				}
-				else // or is it an SDL event? 
-				{
-					// handle an SDL event
-					switch (event.sdl_event.type)
+					case SDL_KEYDOWN: 
 					{
-						case SDL_KEYDOWN: 
-						{
-							ui_state.key_state[event.sdl_event.key.keysym.sym] = 1;
-							break;
-						}
+						ui_state.key_state[event.key.keysym.sym] = 1;
+						break;
+					}
 
-						case SDL_KEYUP: 
-						{
-							ui_state.key_state[event.sdl_event.key.keysym.sym] = 0;
-							break; 
-						}
+					case SDL_KEYUP: 
+					{
+						ui_state.key_state[event.key.keysym.sym] = 0;
+						break; 
+					}
 
-						case SDL_MOUSEBUTTONUP: 
+					case SDL_WINDOWEVENT_RESIZED:
+					{
+						// resize the screen 
+						if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
+							SDL_WINDOWPOS_UNDEFINED, event.window.data1, event.window.data2, gui_context.video_flags)))
 						{
-							ui_event_agar_button_up(&event.sdl_event);
-							break; 
-						}
-
-						case SDL_QUIT:
-						{
+							fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
 							core_state.running = false;
 							break;
 						}
+
+						gui_helper_initialize_opengl();
+						gui_helper_opengl_adjust_size(event.window.data1, event.window.data2);
+						gui_set_size(event.window.data1, event.window.data2);
+
+						// release all opengl textures // note we're waiting for SDL 1.3 to do this right
+						for (size_t i = 0; i < gui_context.panels_count; i++) 
+						{
+							gui_caption_discard_opengl_texture(gui_context.panels[i]);
+						}
+
+						ui_event_resize();
+
+						break;
+					}
+
+					case SDL_QUIT:
+					{
+						core_state.running = false;
+						break;
 					}
 				}
 			}
+
+			if (event.type == SDL_MOUSEBUTTONUP) 
+			{
+				ui_event_agar_button_up();
+			}
 		}
-		UNLOCK(geometry);
-	};
+
+		ui_event_update(delta_time);
+
+		timestamp1 = timestamp2; 
+	}
+
+	ui_prepare_for_deletition(true, true, true, true, true);
+	gui_release();
 
 	return true; 
 }
+#endif
 
 // deallocate program structures
 bool release()

@@ -63,6 +63,14 @@ struct UI_State {
 		* side_top_last, * tabs
 	;
 
+	// file dialogs 
+	/*AG_Window 
+		* window_add_images, * window_add_ifl, * window_import_realviz, * window_import_points, * window_export_realviz,
+		* window_export_vrml, * window_export_dxf, * window_save, * window_open;
+	AG_FileDlg 
+		* dialog_add_images, * dialog_add_ifl, * dialog_import_realviz, * dialog_import_points, * dialog_export_realviz, 
+		* dialog_export_vrml, * dialog_export_dxg, * dialog_save, * dialog_open;*/
+
 	// icons
 	SDL_Surface * icons;
 
@@ -70,7 +78,7 @@ struct UI_State {
 
 	// keyboard
 	Uint8 * keys, * key_state; // pointer to array containing keys' state info (supplied by SDL)
-	bool * inspection_clear_keys, * shot_clear_keys, * overview_clear_keys;    // determines which key states should be automatically cleared
+	std::map <int, bool> inspection_clear_keys, shot_clear_keys, overview_clear_keys;    // determines which key states should be automatically cleared
 	int keys_length; // length of the keys_state array
 
 	// mouse

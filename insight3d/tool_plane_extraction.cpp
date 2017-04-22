@@ -112,40 +112,35 @@ double * tool_plane_extraction(Vertices & vertices, double threshold /*= 0.5*/, 
 	ASSERT(best_sample_inliers > 0, "sample with inliers found after RANSAC"); // debug, replace by line of code above
 
 	// * re-estimate the plane using least squares and inliers of the best sample *
-	CvMat * p;
-	LOCK_RW(opencv) 
+	opencv_begin();
+	CvMat * A = opencv_create_matrix(best_sample_inliers, 3), * b = opencv_create_matrix(best_sample_inliers, 1), * p = opencv_create_matrix(3, 1);
+
+	// put all inliers' values into A and b
+	size_t row = 0;
+	for ALL(vertices, i) 
 	{
-		CvMat * A = opencv_create_matrix(best_sample_inliers, 3), * b = opencv_create_matrix(best_sample_inliers, 1);
-		p = opencv_create_matrix(3, 1);
+		Vertex * const vertex = vertices.data + i;
+		if (!vertex->reconstructed) continue;
 
-		// put all inliers' values into A and b
-		size_t row = 0;
-		for ALL(vertices, i) 
+		// calculate point-plane distance
+		const double distance = dot_3xyz(best_sample, vertex->x, vertex->y, vertex->z) + best_sample[3];
+
+		// if it's inlier, we'll use it
+		if (abs(distance) <= threshold)
 		{
-			Vertex * const vertex = vertices.data + i;
-			if (!vertex->reconstructed) continue;
-
-			// calculate point-plane distance
-			const double distance = dot_3xyz(best_sample, vertex->x, vertex->y, vertex->z) + best_sample[3];
-
-			// if it's inlier, we'll use it
-			if (abs(distance) <= threshold)
-			{
-				OPENCV_ELEM(A, row, 0) = vertex->x; 
-				OPENCV_ELEM(A, row, 1) = vertex->y; 
-				OPENCV_ELEM(A, row, 2) = vertex->z; 
-				OPENCV_ELEM(b, row, 0) = -1;
-				row++; 
-			}
+			OPENCV_ELEM(A, row, 0) = vertex->x; 
+			OPENCV_ELEM(A, row, 1) = vertex->y; 
+			OPENCV_ELEM(A, row, 2) = vertex->z; 
+			OPENCV_ELEM(b, row, 0) = -1;
+			row++; 
 		}
-
-		// check 
-		ASSERT(row == best_sample_inliers, "inlier count and matrix sizes don't match");
-		
-		// least-squares estimation
-		cvSolve(A, b, p, CV_SVD);
 	}
-	UNLOCK_RW(opencv); 
+
+	// check 
+	ASSERT(row == best_sample_inliers, "inlier count and matrix sizes don't match");
+	
+	// least-squares estimation
+	cvSolve(A, b, p, CV_SVD);
 
 	// normalize 
 	best_sample[0] = OPENCV_ELEM(p, 0, 0);
@@ -153,6 +148,7 @@ double * tool_plane_extraction(Vertices & vertices, double threshold /*= 0.5*/, 
 	best_sample[2] = OPENCV_ELEM(p, 2, 0);
 	best_sample[3] = 1;
 	normalize_inhomogeneous_part(best_sample, 4);
+	opencv_end();
 	
 	// optionally color inliers and set their group value // todo color is mostly debug thing, remove
 	for ALL(vertices, i) 
@@ -286,40 +282,35 @@ double * tool_plane_extraction_subset(Vertices & vertices, size_t * ids, size_t 
 	ASSERT(best_sample_inliers > 0, "sample with inliers found after RANSAC"); // debug, replace by line of code above
 
 	// * re-estimate the plane using least squares and inliers of the best sample *
-	CvMat * p;
-	LOCK_RW(opencv)
+	opencv_begin();
+	CvMat * A = opencv_create_matrix(best_sample_inliers, 3), * b = opencv_create_matrix(best_sample_inliers, 1), * p = opencv_create_matrix(3, 1);
+
+	// put all inliers' values into A and b
+	size_t row = 0;
+	for (size_t i = 0; i < count; i++)
 	{
-		CvMat * A = opencv_create_matrix(best_sample_inliers, 3), * b = opencv_create_matrix(best_sample_inliers, 1); 
-		p = opencv_create_matrix(3, 1);
+		Vertex * const vertex = vertices.data + ids[i];
+		if (!vertex->reconstructed) continue;
 
-		// put all inliers' values into A and b
-		size_t row = 0;
-		for (size_t i = 0; i < count; i++)
+		// calculate point-plane distance
+		const double distance = dot_3xyz(best_sample, vertex->x, vertex->y, vertex->z) + best_sample[3];
+
+		// if it's inlier, we'll use it
+		if (abs(distance) <= threshold)
 		{
-			Vertex * const vertex = vertices.data + ids[i];
-			if (!vertex->reconstructed) continue;
-
-			// calculate point-plane distance
-			const double distance = dot_3xyz(best_sample, vertex->x, vertex->y, vertex->z) + best_sample[3];
-
-			// if it's inlier, we'll use it
-			if (abs(distance) <= threshold)
-			{
-				OPENCV_ELEM(A, row, 0) = vertex->x; 
-				OPENCV_ELEM(A, row, 1) = vertex->y; 
-				OPENCV_ELEM(A, row, 2) = vertex->z; 
-				OPENCV_ELEM(b, row, 0) = -1;
-				row++; 
-			}
+			OPENCV_ELEM(A, row, 0) = vertex->x; 
+			OPENCV_ELEM(A, row, 1) = vertex->y; 
+			OPENCV_ELEM(A, row, 2) = vertex->z; 
+			OPENCV_ELEM(b, row, 0) = -1;
+			row++; 
 		}
-
-		// check 
-		ASSERT(row == best_sample_inliers, "inlier count and matrix sizes don't match");
-		
-		// least-squares estimation
-		cvSolve(A, b, p, CV_SVD);
 	}
-	UNLOCK_RW(opencv);
+
+	// check 
+	ASSERT(row == best_sample_inliers, "inlier count and matrix sizes don't match");
+	
+	// least-squares estimation
+	cvSolve(A, b, p, CV_SVD);
 
 	// normalize 
 	best_sample[0] = OPENCV_ELEM(p, 0, 0);
@@ -327,6 +318,7 @@ double * tool_plane_extraction_subset(Vertices & vertices, size_t * ids, size_t 
 	best_sample[2] = OPENCV_ELEM(p, 2, 0);
 	best_sample[3] = 1;
 	normalize_inhomogeneous_part(best_sample, 4);
+	opencv_end();
 	
 	// optionally color inliers and set their group value // todo color is mostly debug thing, remove
 	bool * inlier = ALLOC(bool, count);

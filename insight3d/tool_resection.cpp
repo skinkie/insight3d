@@ -33,7 +33,6 @@ void tool_resection_create()
 	tool_register_menu_function("Main menu|Calibration|More resection...|Uncalibrated, enough points|", tool_resection_all_enough);
 	tool_register_menu_function("Main menu|Calibration|More resection...|Uncalibrated cameras|", tool_resection_all_uncalibrated);
 	tool_register_menu_function("Main menu|Calibration|More resection...|All cameras|", tool_resection_all);
-	tool_register_menu_function("Main menu|Calibration|More resection...|Sydney|", tool_resection_sydney);
 }
 
 // refresh GUI 
@@ -95,29 +94,6 @@ void tool_resection_all()
 	}
 
 	resection_refresh();
-}
-
-void tool_resection_sydney()
-{
-	// calculate the average focal length 
-	double avg_focal_length = 0; 
-	int shots_count = 0; 
-
-	for ALL(shots, i) 
-	{
-		avg_focal_length += shots.data[i].f; 
-		shots_count++; 
-	}
-
-	avg_focal_length /= shots_count;
-	printf("%f\n", avg_focal_length);
-
-	// adjust the focal length of the cameras 
-	/*for ALL(shots, i) 
-	{
-		shots.data[i].f = avg_focal_length; 
-		geometry_calibration_from_P
-	}*/
 }
 
 // resection of all uncalibrated cameras with at least 12 (=2*6) points

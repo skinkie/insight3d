@@ -4,7 +4,7 @@ Issues:
 
 * it's not clear when the user can use panel properties 
   like i for her own purposes and when they are reserved
-* check if caption is consistently strdup'ed
+* check that caption is consistently strdup'ed
 
 */
 
@@ -16,32 +16,12 @@ Issues:
 #define GUI_CLEAR(var, type) memset((var), 0, sizeof(type))
 #define GUI_CLEAR_ARRAY(var, n, type) (memset((var), 0, sizeof((type)) * (n)))
 
-/* Fixes */ 
-bool mousealreadydown;
-
-/* Threading */ 
-static pthread_t gui_rendering_thread;
-static pthread_mutex_t gui_structures_lock = PTHREAD_MUTEX_INITIALIZER;
-
 /* Global variables */
 GUI_Context gui_context;
 
 /* Auxiliary macros */ 
 
-GUI_Event_Descriptor gui_construct_event_descriptor(GUI_Panel * const panel, const SDL_Event sdl);
-
-#define GUI_FIRE_EVENT(panel, event, sdl) \
-	if ((panel)->on_##event) \
-	{ \
-		if ((panel)->on_##event##_is_internal) \
-		{ \
-			(panel)->on_##event(gui_construct_event_descriptor((panel), (sdl))); \
-		} \
-		else \
-		{ \
-			gui_aux_add_to_event_queue(panel, (panel)->on_##event, (sdl)); \
-		} \
-	}
+#define GUI_FIRE_EVENT(panel, event) if ((panel)->on_##event) { (panel)->on_##event(panel); }
 
 /* Auxiliary functions */ 
 
@@ -73,21 +53,19 @@ void gui_initialize()
 /* helper functions do the routine stuff for you */
 
 // initialize SDL window with OpenGL support
-bool gui_helper_initialize()
+bool gui_helper_initialize(const int width, const int height)
 {
 	return
 		// initialize SDL
-		gui_helper_initialize_sdl() &&
+		gui_helper_initialize_sdl(width, height) &&
 		// create OpenGL window
 		gui_helper_initialize_opengl()
 	;
 }
 
 // initialize SDL
-bool gui_helper_initialize_sdl()
+bool gui_helper_initialize_sdl(const int width, const int height)
 {
-	const int width = gui_context.width, height = gui_context.height;
-
     // initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -96,22 +74,22 @@ bool gui_helper_initialize_sdl()
 	}
 
     // fetch the video info
-	if (!(gui_context.video_info = SDL_GetVideoInfo()))
+	/*if (!(gui_context.video_info = SDL_GetVideoInfo()))
 	{
 		fprintf(stderr, "[GUI] Video query failed: %s\n", SDL_GetError());
 		return false;
-	}
+	}*/
 
     // set the flags
-    gui_context.video_flags  = SDL_OPENGL;          // enable opengl
+    gui_context.video_flags  = SDL_WINDOW_OPENGL;          // enable opengl
     gui_context.video_flags |= SDL_GL_DOUBLEBUFFER; // double buffering prevents flickering
-    gui_context.video_flags |= SDL_HWPALETTE;       // store palette in hardware 
-    gui_context.video_flags |= SDL_RESIZABLE;       // enable resizing
+    //gui_context.video_flags |= SDL_WINDOW_HWPALETTE;       // store palette in hardware 
+    gui_context.video_flags |= SDL_WINDOW_RESIZABLE;       // enable resizing
 
     // check if surfaces can be stored in hardware
-    if (gui_context.video_info->hw_available)
+    if (gui_context.video_info) //->hw_available)
 	{
-		gui_context.video_flags |= SDL_HWSURFACE;
+		//gui_context.video_flags |= SDL_HWSURFACE;
 	}
     else
 	{
@@ -121,21 +99,24 @@ bool gui_helper_initialize_sdl()
     // check if hardware blits can be done
 	if (gui_context.video_info->blit_hw)
 	{
-		gui_context.video_flags |= SDL_HWACCEL;
+		//gui_context.video_flags |= SDL_HWACCEL;
 	}
 
     // turn on opengl double buffering 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     // get sdl surface to draw on
-	if (!(gui_context.surface = SDL_SetVideoMode(width, height, 32, gui_context.video_flags)))
+	gui_context.surface = SDL_CreateRGBSurface(0, width, height, 32,
+                                        0x00FF0000,
+                                        0x0000FF00,
+                                        0x000000FF,
+                                        0xFF000000);
+//	if (!(gui_context.surface = SDL_SetVideoMode(width, height, 32, gui_context.video_flags)))
+	if (!gui_context.surface)
 	{
 	    fprintf(stderr, "[GUI] Video mode set failed: %s\n", SDL_GetError());
 		return false;
 	}
-
-	// set window title 
-	SDL_WM_SetCaption(gui_context.title, NULL);
 
 	return true;
 }
@@ -160,9 +141,8 @@ bool gui_helper_initialize_opengl()
 }
 
 // adjust opengl rendering settings for new window size
-void gui_helper_opengl_adjust_size()
+void gui_helper_opengl_adjust_size(int width, int height)
 {
-	int width = gui_context.width, height = gui_context.height;
 	float ratio;
 
 	// set size
@@ -176,7 +156,7 @@ void gui_helper_opengl_adjust_size()
 	// set camera
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, ratio, 0.001, 1000.0);
+	//gluPerspective(45.0, ratio, 0.001, 1000.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -199,12 +179,6 @@ void gui_set_size(const int width, const int height)
 	gui_context.root_panel.y1 = 0; 
 	gui_context.root_panel.x2 = width; 
 	gui_context.root_panel.y2 = height;
-}
-
-// set window title 
-void gui_set_title(const char * const title) 
-{
-	memcpy(gui_context.title, title, strlen(title) + 1);
 }
 
 /* Define gui elements */
@@ -391,52 +365,9 @@ void gui_set_style(GUI_Panel * panel, GUI_Render rendering_function)
 	panel->on_render = rendering_function;
 }
 
-/*void gui_cancel_event() // todo this probably stopped working since the introduction of multiple threads... might work on internally handled events 
+void gui_cancel_event()
 {
 	gui_context.event_cancelled = true;
-}*/
-
-bool gui_poll_event(GUI_Event_Descriptor * event)
-{
-	// lock the queue structure 
-	gui_lock(); 
-
-	// if there is no event, return false 
-	if (gui_context.event_queue_bottom == gui_context.event_queue_top)
-	{
-		gui_unlock(); 
-		return false; 
-	}
-
-	// check out an event 
-	*event = gui_context.event_queue[gui_context.event_queue_bottom]; 
-	gui_context.event_queue_bottom = (gui_context.event_queue_bottom + 1) % GUI_EVENT_QUEUE_LENGTH;
-
-	// unlock the queue structure 
-	gui_unlock();
-
-	return true;
-}
-
-GUI_Event_Descriptor gui_construct_event_descriptor(GUI_Panel * const panel, const SDL_Event sdl)
-{
-	GUI_Event_Descriptor event; 
-	event.panel = panel; 
-	event.sdl_event = sdl; 
-	return event;
-}
-
-void gui_aux_add_to_event_queue(GUI_Panel * panel, GUI_Event event, SDL_Event sdl_event)
-{
-	gui_lock();
-
-	gui_context.event_queue[gui_context.event_queue_top].panel = panel;
-	gui_context.event_queue[gui_context.event_queue_top].handler = event;
-	gui_context.event_queue[gui_context.event_queue_top].sdl_event = sdl_event;
-
-	gui_context.event_queue_top = (gui_context.event_queue_top + 1) % GUI_EVENT_QUEUE_LENGTH;
-
-	gui_unlock();
 }
 
 /* Setters */ 
@@ -523,20 +454,6 @@ void gui_render()
 		panel->effectively_hidden = false;
 
 		/*float hash1 = 0.823F * (float)i;
-		if (
-			panel->on_buttonaction_is_internal || 
-			panel->on_focus_is_internal || 
-			panel->on_menuitemaction_is_internal || 
-			panel->on_mousedown_is_internal || 
-			panel->on_mousedownout_is_internal || 
-			panel->on_mousemove_is_internal || 
-			panel->on_mouseup_is_internal || 
-			panel->on_render_is_internal || 
-			panel->on_unfocus_is_internal
-		)
-		{
-			hash1 = 0.823F * (float)(rand() % 100);
-		}
 		float hash2 = 1 - 0.2F * panel->focus;
 		glColor3d(0.5 + 0.5 * hash2 * sin(hash1), 0.5 + 0.5 * hash2 * cos(hash1), i * 0.01);*/
 
@@ -574,6 +491,27 @@ void gui_render()
 			glEnd();*/
 		}
 	}
+
+	/*if (!texture)
+	{
+		IplImage * img = cvCreateImage(cvSize(100, 100), IPL_DEPTH_8U, 3);
+
+		// test font 
+		cvZero(img);
+		cvPutText(img, "File Options View", cvPoint(1, 12), &gui_context.font, cvScalar(255, 255, 255)); 
+
+		texture = gui_upload_opengl_texture(img);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glColor3f(1, 1, 1);
+	glBegin(GL_POLYGON); 
+		glTexCoord2d(0, 1); glVertex3d(0.2, 0.2, -1); 
+		glTexCoord2d(1, 1); glVertex3d(0.8, 0.2, -1); 
+		glTexCoord2d(1, 0); glVertex3d(0.8, 0.8, -1); 
+		glTexCoord2d(0, 0); glVertex3d(0.2, 0.8, -1); 
+	glEnd(); 
+	glBindTexture(GL_TEXTURE_2D, 0);*/
 
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -629,75 +567,6 @@ void gui_caption_discard_opengl_texture(GUI_Panel * panel)
 	}
 }
 
-/* Rendering thread */
-
-void * gui_rendering_thread_function(void * args) 
-{
-	// initialize GUI
-	gui_helper_initialize_sdl();
-	gui_helper_initialize_opengl();
-	gui_helper_opengl_adjust_size();
-
-	// GUI loop
-	while (true) 
-	{
-		// note that we should render the window only if it's active
-
-		// redraw scene
-		gui_calculate_coordinates();
-		gui_render();
-		SDL_GL_SwapBuffers();
-
-		// check out new events
-		SDL_Event event;
-
-		// handle events in queue
-		mousealreadydown = false;
-		while (SDL_PollEvent(&event))
-		{
-			/* gui_lock();
-			printf("%d ", (gui_context.event_queue_top - gui_context.event_queue_bottom) % GUI_EVENT_QUEUE_LENGTH);
-			gui_unlock();*/
-
-			// first we let GUI handle this event or translate it into GUI event 
-			if (!gui_resolve_event(&event)) 
-			{
-				// if that didn't work, check if we can handle it ourselves 
-				if (event.type == SDL_VIDEORESIZE) 
-				{
-					// resize the screen 
-					if (!(gui_context.surface = SDL_SetVideoMode(event.resize.w, event.resize.h, 32, gui_context.video_flags)))
-					{
-						fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
-						// todo terminate
-						break;
-					}
-
-					gui_set_size(event.resize.w, event.resize.h);
-					gui_helper_initialize_opengl();
-					gui_helper_opengl_adjust_size();
-
-					// release all opengl textures // note we're waiting for SDL 1.3 to do this right
-					for (size_t i = 0; i < gui_context.panels_count; i++) 
-					{
-						gui_caption_discard_opengl_texture(gui_context.panels[i]);
-					}
-				}
-
-				// if that didn't work, save it as an SDL event 
-				gui_aux_add_to_event_queue(NULL, NULL, event);
-			}
-		}
-	}
-
-	return NULL;
-}
-
-bool gui_start_rendering_thread()
-{
-	return !pthread_create(&gui_rendering_thread, NULL, gui_rendering_thread_function, NULL);
-}
-
 /* Respond to events */
 
 // resolve mouse move event - setting mouse over flags, sending events to individual panels 
@@ -733,11 +602,11 @@ bool gui_resolve_mousemotion(SDL_Event * event)
 		if (!gui_context.panels[focus]->focus) 
 		{
 			gui_context.panels[focus]->focus = true;
-			GUI_FIRE_EVENT(gui_context.panels[focus], focus, *event);
+			GUI_FIRE_EVENT(gui_context.panels[focus], focus);
 		}
 
 		// send onmousemove event 
-		GUI_FIRE_EVENT(gui_context.panels[focus], mousemove, *event);
+		GUI_FIRE_EVENT(gui_context.panels[focus], mousemove);
 	}
 
 	// send onunfocus events to panels that were previously focused 
@@ -749,7 +618,7 @@ bool gui_resolve_mousemotion(SDL_Event * event)
 		if (i != focus && gui_context.panels[i]->focus)
 		{
 			gui_context.panels[i]->focus = false;
-			GUI_FIRE_EVENT(gui_context.panels[i], unfocus, *event);
+			GUI_FIRE_EVENT(gui_context.panels[i], unfocus);
 		}
 	}
 
@@ -760,7 +629,7 @@ bool gui_resolve_mousemotion(SDL_Event * event)
 bool gui_resolve_mousebuttondown(SDL_Event * event)
 {
 	// send mouse button down out event to all panels that haven't been clicked 
-	// gui_context.event_cancelled = false; // mouse button out events can cancel processing of mouse button down events
+	gui_context.event_cancelled = false; // mouse button out events can cancel processing of mouse button down events
 	GUI_Panel * focused = NULL;
 	for (size_t i = 0; i < gui_context.panels_count; i++) 
 	{
@@ -772,20 +641,20 @@ bool gui_resolve_mousebuttondown(SDL_Event * event)
 			continue; 
 		}
 
-		GUI_FIRE_EVENT(panel, mousedownout, *event); 
+		GUI_FIRE_EVENT(panel, mousedownout); 
 	}
 
 	// check if the event was cancelled 
-	// if (gui_context.event_cancelled) 
-	// {
-	// 	gui_context.event_cancelled = false; 
-	// 	return true;
-	// }
+	if (gui_context.event_cancelled) 
+	{
+		gui_context.event_cancelled = false; 
+		return true;
+	}
 
 	// get the focused panel and send appropriate mouse button down event
 	if (focused)
 	{
-		GUI_FIRE_EVENT(focused, mousedown, *event);
+		GUI_FIRE_EVENT(focused, mousedown);
 	}
 
 	return true;
@@ -810,9 +679,7 @@ bool gui_resolve_mousebuttonup(SDL_Event * event)
 
 	if (focused)
 	{
-		if (!focused->on_mouseup) return false;
-
-		GUI_FIRE_EVENT(focused, mouseup, *event);
+		GUI_FIRE_EVENT(focused, mouseup);
 	}
 
 	return true;
@@ -821,14 +688,12 @@ bool gui_resolve_mousebuttonup(SDL_Event * event)
 // resolve one event
 bool gui_resolve_event(SDL_Event * event)
 {
+	gui_context.event = event;
+
 	switch (event->type)
 	{
 		case SDL_MOUSEMOTION: return gui_resolve_mousemotion(event); break; 
-		case SDL_MOUSEBUTTONDOWN: 
-			if (mousealreadydown) return false;
-			mousealreadydown = true;
-			return gui_resolve_mousebuttondown(event); 
-		break;
+		case SDL_MOUSEBUTTONDOWN: return gui_resolve_mousebuttondown(event); break;
 		case SDL_MOUSEBUTTONUP: return gui_resolve_mousebuttonup(event); break;
 	}
 
@@ -989,9 +854,7 @@ GUI_Panel * gui_new_menu_item(GUI_Panel * parent, char * caption)
 
 	// register standard event handlers 
 	GUI_EVENT_HANDLER(panel, mousedown) = gui_menu_event_mousedown; 
-	panel->on_mousedown_is_internal = true;
 	GUI_EVENT_HANDLER(panel, mousedownout) = gui_menu_event_mousedownout;
-	panel->on_mousedownout_is_internal = true;
 	GUI_SET_RENDERING_STYLE(panel, menu_item);
 
 	// all menu items are hidden by default 
@@ -1027,13 +890,13 @@ void gui_aux_menu_hide(GUI_Panel * panel)
 }
 
 // mouse down event handler shows the menu item and it's children
-void gui_menu_event_mousedown(const GUI_Event_Descriptor event)
+void gui_menu_event_mousedown(GUI_Panel * panel)
 {
 	// respond only to left click
-	if (event.sdl_event.button.button != SDL_BUTTON_LEFT) return;
+	if (gui_context.event->button.button != SDL_BUTTON_LEFT) return;
 
 	// show all it's ancestors
-	GUI_Panel * parent = event.panel, * root = NULL;
+	GUI_Panel * parent = panel, * root = NULL;
 	while (parent = parent->menu_parent)
 	{
 		gui_set_panel_visible(parent, true);
@@ -1050,7 +913,7 @@ void gui_menu_event_mousedown(const GUI_Event_Descriptor event)
 	}
 
 	// show all it's children
-	GUI_Panel * child = event.panel->menu_first_child;
+	GUI_Panel * child = panel->menu_first_child;
 	while (child)
 	{
 		gui_set_panel_visible(child, true);
@@ -1058,9 +921,9 @@ void gui_menu_event_mousedown(const GUI_Event_Descriptor event)
 	}
 
 	// check if this menu has assigned an action 
-	if (event.panel->on_menuitemaction)
+	if (panel->on_menuitemaction)
 	{
-		GUI_FIRE_EVENT(event.panel, menuitemaction, event.sdl_event);
+		panel->on_menuitemaction(panel);
 		
 		// if it has action assigned, we should hide it 
 		gui_aux_menu_hide(root);
@@ -1068,14 +931,14 @@ void gui_menu_event_mousedown(const GUI_Event_Descriptor event)
 }
 
 // mouse down out event hides all menu items
-void gui_menu_event_mousedownout(const GUI_Event_Descriptor event)
+void gui_menu_event_mousedownout(GUI_Panel * panel)
 {
 	// respond only to left click
-	if (event.sdl_event.button.button != SDL_BUTTON_LEFT) return;
+	if (gui_context.event->button.button != SDL_BUTTON_LEFT) return;
 
-	if (event.panel->menu_type == GUI_MENU_ITEM)
+	if (panel->menu_type == GUI_MENU_ITEM)
 	{
-		gui_set_panel_visible(event.panel, false);
+		gui_set_panel_visible(panel, false);
 	}
 }
 
@@ -1143,15 +1006,14 @@ GUI_Panel * gui_new_tab(GUI_Panel * tabs_container, const char * title)
 
 	// register the event that makes it clickable 
 	GUI_EVENT_HANDLER(new_button, mousedown) = gui_tab_event_mousedown;
-	new_button->on_mousedown_is_internal = true;
 
 	return new_tab;
 }
 
 // respond to the user clicking on a tab button 
-void gui_tab_event_mousedown(const GUI_Event_Descriptor event)
+void gui_tab_event_mousedown(GUI_Panel * panel)
 {
-	const GUI_Panel * const tabs = event.panel->tab_container;
+	const GUI_Panel * const tabs = panel->tab_container;
 	GUI_Panel * tab_button = tabs->tab_sibling->tab_sibling; 
 
 	// hide all tabs
@@ -1162,7 +1024,7 @@ void gui_tab_event_mousedown(const GUI_Event_Descriptor event)
 	}
 
 	// show the clicked tab 
-	gui_set_panel_visible(event.panel->tab_complement, true);
+	gui_set_panel_visible(panel->tab_complement, true);
 }
 
 /* Labels */ 
@@ -1191,7 +1053,6 @@ GUI_Panel * gui_new_checkbox(GUI_Panel * parent, GUI_Panel * sibling, const char
 	checkbox->caption = caption;
 	GUI_SET_RENDERING_STYLE(checkbox, checkbox); // note unfortunate combination of names makes this line unreadable
 	GUI_EVENT_HANDLER(checkbox, mousedown) = gui_checkbox_event_mousedown;
-	checkbox->on_mousedown_is_internal = true;
 	return checkbox;
 }
 
@@ -1208,9 +1069,9 @@ bool gui_get_checkbox(GUI_Panel * checkbox) // todo we might want to unify the g
 }
 
 // mouse event handlers
-void gui_checkbox_event_mousedown(const GUI_Event_Descriptor event)
+void gui_checkbox_event_mousedown(GUI_Panel * panel)
 {
-	gui_set_checkbox(event.panel, !gui_get_checkbox(event.panel));
+	gui_set_checkbox(panel, !gui_get_checkbox(panel));
 }
 
 /* Radio buttons */ 
@@ -1251,7 +1112,6 @@ GUI_Panel * gui_new_radio_button(GUI_Panel * parent, GUI_Panel * sibling, GUI_Pa
 	radio->caption = caption;
 	GUI_SET_RENDERING_STYLE(radio, radio); // note unfortunate combination of names makes this line unreadable
 	GUI_EVENT_HANDLER(radio, mousedown) = gui_radio_event_mousedown;
-	radio->on_mousedown_is_internal = true;
 
 	return radio;
 }
@@ -1290,10 +1150,10 @@ int gui_get_height(GUI_Panel * panel)
 }
 
 // mouse event handlers 
-void gui_radio_event_mousedown(const GUI_Event_Descriptor event)
+void gui_radio_event_mousedown(GUI_Panel * panel)
 {
 	// go through all it's siblings 
-	GUI_Panel * group = event.panel->radio_parent;
+	GUI_Panel * group = panel->radio_parent;
 	GUI_Panel * sibling = group->radio_next;
 	// assert (sibling) 
 
@@ -1301,7 +1161,7 @@ void gui_radio_event_mousedown(const GUI_Event_Descriptor event)
 	int i = 1;
 	while (sibling)
 	{
-		sibling->i = (sibling != event.panel) ? 0 : i;
+		sibling->i = (sibling != panel) ? 0 : i;
 		sibling = sibling->radio_next;
 		i++;
 	}
@@ -1318,17 +1178,16 @@ GUI_Panel * gui_new_button(GUI_Panel * parent, GUI_Panel * sibling, const char *
 	button->caption = caption;
 	GUI_SET_RENDERING_STYLE(button, button); // note unfortunate combination of names makes this line unreadable
 	GUI_EVENT_HANDLER(button, mousedown) = gui_button_event_mousedown;
-	button->on_mousedown_is_internal = true; // note that it is strange to have macro for accessing events but we have to access internality flag directly
 	GUI_EVENT_HANDLER(button, buttonaction) = button_clicked;
 	return button;
 }
 
 // mouse event handlers
-void gui_button_event_mousedown(const GUI_Event_Descriptor event)
+void gui_button_event_mousedown(GUI_Panel * panel)
 {
-	if (event.sdl_event.button.button == SDL_BUTTON_LEFT) 
+	if (gui_context.event->button.button == SDL_BUTTON_LEFT) 
 	{
-		GUI_FIRE_EVENT(event.panel, buttonaction, event.sdl_event);
+		panel->on_buttonaction(panel);
 	}
 }
 
@@ -1339,7 +1198,6 @@ void gui_make_glview(GUI_Panel * panel, GUI_GLView_Render render)
 {
 	panel->glview_render = render;
 	GUI_EVENT_HANDLER(panel, render) = gui_glview_event_render;
-	panel->on_render_is_internal = true;
 }
 
 // glview render event 
@@ -1379,16 +1237,4 @@ GUI_Panel * gui_new_hseparator(GUI_Panel * parent, GUI_Panel * sibling)
 	gui_set_margins(separator, 2, 4, 2, 4);
 	GUI_SET_RENDERING_STYLE(separator, separator); // note unfortunate combination of names makes this line unreadable
 	return separator;
-}
-
-/* Multi-threading */ 
-
-void gui_lock()
-{
-	pthread_mutex_lock(&gui_structures_lock);
-}
-
-void gui_unlock()
-{
-	pthread_mutex_unlock(&gui_structures_lock);
 }

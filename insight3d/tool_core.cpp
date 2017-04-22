@@ -25,7 +25,6 @@
 #include "tool_core.h"
 
 Tools_State tools_state;
-pthread_mutex_t tools_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 DYNAMIC_STRUCTURE(Tool_Menu_Items, Tool_Menu_Item);
 DYNAMIC_STRUCTURE(Tool_Parameters, Tool_Parameter);
@@ -33,39 +32,29 @@ DYNAMIC_STRUCTURE(Tool_Parameters, Tool_Parameter);
 const int TOOL_ENUM_FIRST = 1;
 
 // callback function activating a tool
-void tool_activate_handler(const GUI_Event_Descriptor event)
+void tool_activate_handler(GUI_Panel * event)
 {
-	LOCK(tools)
+	// call end routine for previous tool
+	if (tools_state.tools[tools_state.current].end)
 	{
-		// call end routine for previous tool
-		if (tools_state.tools[tools_state.current].end)
-		{
-			tools_state.tools[tools_state.current].end();
-		}
-
-		// select new tool 
-		const int tool_id = event.panel->i;
-		tools_state.current = tool_id; 
-
-		// call begin routine for new tool
-		if (tools_state.tools[tool_id].begin) 
-		{
-			Tool_Begin_Event_Handler call = tools_state.tools[tool_id].begin;
-			UNLOCK(tools);
-			call();
-		}
-		else
-		{
-			UNLOCK(tools);
-		}
+		tools_state.tools[tools_state.current].end();
 	}
-	WAS_UNLOCKED_RW(tools);
+
+	// select new tool 
+	const int tool_id = event->i;
+	tools_state.current = tool_id; 
+
+	// call begin routine for new tool
+	if (tools_state.tools[tool_id].begin) 
+	{
+		tools_state.tools[tool_id].begin();
+	}
 }
 
 // menu item pressed 
-void tool_menu_item_pressed(const GUI_Event_Descriptor event)
+void tool_menu_item_pressed(GUI_Panel * event)
 {
-	const int i = event.panel->i;
+	const int i = event->i;
 	const Tool_Menu_Item * const item = tools_state.menu_items.data + i;
 
 	// take a look what this menu item should do 
@@ -80,9 +69,9 @@ void tool_menu_item_pressed(const GUI_Event_Descriptor event)
 }
 
 // tab button pressed 
-void tool_tab_button_pressed(const GUI_Event_Descriptor event)
+void tool_tab_button_pressed(GUI_Panel * event)
 {
-	const Tool_Function_Call call = (Tool_Function_Call)(event.panel->p); 
+	const Tool_Function_Call call = (Tool_Function_Call)(event->p); 
 	call();
 }
 
@@ -337,6 +326,7 @@ void tool_finalize()
 					items[i] = gui_new_menu_item(items[i - 1], name);
 					gui_set_menu_action(items[i], tool_menu_item_pressed); 
 					items[i]->i = menu_items_iterator;
+					// items[i] = AG_MenuAction(items[i - 1], name, NULL, tool_menu_item_pressed, "d", menu_items_iterator);
 					i++;
 				}
 				else
@@ -344,6 +334,7 @@ void tool_finalize()
 					// create new menu item
 					items[i] = gui_new_menu_item(items[i - 1], name);
 					items[i]->i = 0;
+					// items[i] = AG_MenuAction(items[i - 1], name, NULL, NULL, NULL);
 					i++;
 				}
 
@@ -648,59 +639,54 @@ void tool_set_end_handler(const Tool_End_Event_Handler handler)
 char * tool_choose_file()
 {
 	char * filename = NULL; 
-
-	UNLOCK(geometry);
-	{
 #ifdef LINUX
-		GtkWidget * dialog = gtk_file_chooser_dialog_new(
-					"Open File",
-					NULL,
-					GTK_FILE_CHOOSER_ACTION_OPEN,
-					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-					NULL
-		);
+	GtkWidget * dialog = gtk_file_chooser_dialog_new(
+				"Open File",
+				NULL,
+				GTK_FILE_CHOOSER_ACTION_OPEN,
+				GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+				NULL
+	);
 
-		if (gtk_dialog_run(GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-		{
-			char * fn = NULL; 
-			
-			fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-			const size_t len = strlen(fn);
-			filename = ALLOC(char, len + 1); 
-			memcpy(filename, fn, len + 1);
-		}
-
-		gtk_widget_destroy(dialog);
-#else
-		// todo eventually replace with Vista's common item dialog 
-		OPENFILENAMEA ofn;
-		char szFile[1000];
-		const HWND hwnd = GetForegroundWindow();
-
-		// initialize the structure
-		ZeroMemory(&ofn, sizeof(ofn));
-		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = hwnd;
-		ofn.lpstrFile = szFile;
-		ofn.lpstrFile[0] = '\0'; // maybe we could initialize this 
-		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
-		ofn.nFilterIndex = 1;
-		ofn.lpstrFileTitle = NULL;
-		ofn.nMaxFileTitle = 0;
-		ofn.lpstrInitialDir = NULL;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-		// display the dialog
-		if (GetOpenFileNameA(&ofn) == TRUE) 
-		{
-			filename = ALLOC(char, sizeof(szFile));
-			memcpy(filename, szFile, sizeof(szFile));
-		}
-#endif
+	if (gtk_dialog_run(GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		char * fn = NULL; 
+		
+		fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		const size_t len = strlen(fn);
+		filename = ALLOC(char, len + 1); 
+		memcpy(filename, fn, len + 1);
 	}
-	LOCK(geometry);
+
+	gtk_widget_destroy(dialog);
+#else
+	// todo eventually replace with Vista's common item dialog 
+	OPENFILENAMEA ofn;
+	char szFile[1000];
+	const HWND hwnd = GetForegroundWindow();
+
+	// initialize the structure
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0'; // maybe we could initialize this 
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	// display the dialog
+	if (GetOpenFileNameA(&ofn) == TRUE) 
+	{
+		filename = ALLOC(char, sizeof(szFile));
+		memcpy(filename, szFile, sizeof(szFile));
+	}
+#endif
 	return filename;
 }
 
@@ -778,38 +764,20 @@ char * tool_choose_new_file()
 
 void tool_start_progressbar()
 {
-	/*LOCK_RW(opencv)
-	{
-		cvNamedWindow("progressbar"); 
-		IplImage * img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3); 
-		cvZero(img); 
-		cvShowImage("progressbar", img); 
-		cvWaitKey(10);
-		cvReleaseImage(&img);
-	}
-	UNLOCK_RW(opencv);*/
-
-	ATOMIC(tools, 
-		tools_state.progressbar_show = true; 
-		tools_state.progressbar_percentage = 0;
-	);
+	cvNamedWindow("progressbar"); 
+	IplImage * img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3); 
+	cvZero(img); 
+	cvShowImage("progressbar", img); 
+	cvWaitKey(10);
+	cvReleaseImage(&img);
 }
 
 void tool_end_progressbar()
 {
-	/*LOCK_RW(opencv)
-	{
-		// cvDestroyWindow("progressbar");
-		cvShowImage("progressbar", NULL);
-		cvDestroyAllWindows();
-		cvWaitKey(1);
-	}
-	UNLOCK_RW(opencv);*/
-
-	ATOMIC(tools, 
-		tools_state.progressbar_show = false;
-		tools_state.progressbar_percentage = 0;
-	);
+	// cvDestroyWindow("progressbar");
+	cvShowImage("progressbar", NULL);
+	cvDestroyAllWindows();
+	cvWaitKey(1);
 }
 
 void tool_show_progress(double percentage)
@@ -817,20 +785,14 @@ void tool_show_progress(double percentage)
 	if (percentage < 0) percentage = 0; 
 	if (percentage > 1) percentage = 1;
 
-	ATOMIC(tools, tools_state.progressbar_percentage = percentage; );
-
-	/*LOCK_RW(opencv)
+	IplImage * img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3); 
+	cvZero(img); 
+	for (int i = 0; i < 30; i++) 
 	{
-		IplImage * img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3); 
-		cvZero(img); 
-		for (int i = 0; i < 30; i++) 
-		{
-			cvLine(img, cvPoint(0, i), cvPoint(199 * percentage, i), cvScalar(255, 160, 160));
-		}
-		cvShowImage("progressbar", img);
-		cvWaitKey(10);
-		cvReleaseImage(&img); 
+		cvLine(img, cvPoint(0, i), cvPoint(199 * percentage, i), cvScalar(255, 160, 160));
 	}
-	UNLOCK_RW(opencv);*/
+	cvShowImage("progressbar", img);
+	cvWaitKey(10);
+	cvReleaseImage(&img); 
 }
 

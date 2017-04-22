@@ -101,7 +101,7 @@ bool tool_polygons_mouse_down(double x, double y, int button)
 		// if it is there and shift is pressed, remove it 
 		if (found)
 		{
-			if (sdl_shift_pressed()) // strong TODO!!! this can't be used here!
+			if (sdl_shift_pressed())
 			{
 				polygons.data[polygon_id].vertices.data[polygon_iter].set = false;
 			}
