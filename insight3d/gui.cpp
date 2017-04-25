@@ -72,10 +72,12 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 		fprintf(stderr, "[GUI] Video initialization failed: %s\n", SDL_GetError());
 	    return false;
 	}
+       //Use OpenGL 2.1
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 
     // fetch the video info
 	/*if (!(gui_context.video_info = SDL_GetVideoInfo()))
-	{
 		fprintf(stderr, "[GUI] Video query failed: %s\n", SDL_GetError());
 		return false;
 	}*/
@@ -102,16 +104,20 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 		//gui_context.video_flags |= SDL_HWACCEL;
 	}
 
+    
     // turn on opengl double buffering 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
+    gui_context.sdl_window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED, width, height, gui_context.video_flags );
+        if( gui_context.sdl_window == NULL )
+        {
+            fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
+            return false;
+        }
+SDL_GL_CreateContext( gui_context.sdl_window );
     // get sdl surface to draw on
-	gui_context.surface = SDL_CreateRGBSurface(0, width, height, 32,
-                                        0x00FF0000,
-                                        0x0000FF00,
-                                        0x000000FF,
-                                        0xFF000000);
-//	if (!(gui_context.surface = SDL_SetVideoMode(width, height, 32, gui_context.video_flags)))
+    gui_context.surface = SDL_GetWindowSurface( gui_context.sdl_window );
 	if (!gui_context.surface)
 	{
 	    fprintf(stderr, "[GUI] Video mode set failed: %s\n", SDL_GetError());
