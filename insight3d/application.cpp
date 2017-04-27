@@ -110,6 +110,7 @@ bool main_loop()
 		// handle events in queue
 		while (SDL_PollEvent(&event))
 		{
+			printf("event %d \n", event.type);
 			if (!gui_resolve_event(&event))
 			{
 				switch (event.type)
@@ -126,17 +127,18 @@ bool main_loop()
 						break; 
 					}
 
-					case SDL_WINDOWEVENT_RESIZED:
+				    case SDL_WINDOWEVENT: {
+					if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 					{
 						// resize the screen 
-						if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
+						/*if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
 							SDL_WINDOWPOS_UNDEFINED, event.window.data1, event.window.data2, gui_context.video_flags)))
 						{
 							fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
 							core_state.running = false;
 							break;
-						}
-
+						}*/
+						printf("window resized %d %d\n", event.window.data1, event.window.data2);
 						gui_helper_initialize_opengl();
 						gui_helper_opengl_adjust_size(event.window.data1, event.window.data2);
 						gui_set_size(event.window.data1, event.window.data2);
@@ -148,9 +150,8 @@ bool main_loop()
 						}
 
 						ui_event_resize();
-
-						break;
 					}
+				    break;}
 
 					case SDL_QUIT:
 					{

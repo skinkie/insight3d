@@ -409,7 +409,7 @@ bool ui_register_tools()
 	ui_state.side_top_last = gui_new_button(ui_state.side_top, ui_state.side_top_last, "Previous", ui_prev_shot);
 	ui_state.side_top_last = gui_new_button(ui_state.side_top, ui_state.side_top_last, "Next", ui_next_shot);
 
-	// other tols 
+	// other tools 
 	tool_matching_create();
 	tool_calibration_create();
 	tool_resection_create();
