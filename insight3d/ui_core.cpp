@@ -31,7 +31,7 @@ bool ui_initialize()
 
 	// if we're on linux, we use gtk for dialogs (as every sane person should do)  
 #ifdef LINUX
-	gtk_init(NULL, NULL);
+	// move to after SDL_Init gtk_init(NULL, NULL);
 #endif
 
 	// set default application mode to "shot mode"
@@ -39,6 +39,7 @@ bool ui_initialize()
 	ui_state.previous_mode = UI_MODE_INSPECTION;
 
 	// user interface state initialization
+	ui_state.key_state.clear();
 	//ui_state.key_state = ALLOC(Uint8, SDLK_LAST);
 	//memset(ui_state.key_state, 0, sizeof(Uint8) * SDLK_LAST);
 	ui_state.keys = (Uint8*)SDL_GetKeyboardState((int*)&ui_state.keys_length);

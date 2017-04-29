@@ -640,6 +640,7 @@ char * tool_choose_file()
 {
 	char * filename = NULL; 
 #ifdef LINUX
+        gtk_init(NULL, NULL);
 	GtkWidget * dialog = gtk_file_chooser_dialog_new(
 				"Open File",
 				NULL,

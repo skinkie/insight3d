@@ -1952,17 +1952,17 @@ void calibration_bundle()
 		0,
 		visibility_mask,
 		parameters,
-		BA_CAMERA_PARAMETERS, 
+		BA_CAMERA_PARAMETERS,
 		4,
-		measurement, 
-		NULL, 
-		2, 
-		calibration_projection, 
-		NULL, 
+		measurement,
+		NULL,
+		2,
+		calibration_projection,
+		NULL,
 		NULL,
 		1000,
 		0, // verbose option
-		options, 
+		options,
 		info
 	);
 

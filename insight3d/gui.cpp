@@ -72,6 +72,9 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 		fprintf(stderr, "[GUI] Video initialization failed: %s\n", SDL_GetError());
 	    return false;
 	}
+#ifdef LINUX
+	gtk_init(NULL, NULL);
+#endif
        //Use OpenGL 2.1
         SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
         SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
@@ -104,7 +107,6 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 		//gui_context.video_flags |= SDL_HWACCEL;
 	}
 
-    
     // turn on opengl double buffering 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 

@@ -276,7 +276,7 @@ void ui_inspection_mouse_button_down()
 			//	break;
 			case SDL_BUTTON_MIDDLE:
 				memcpy(ui_state.ground_POI_dragging_start, visualization_state.ground_POI, 3 * sizeof(double));
-				break; 
+				break;
 		}
 	}
 }
