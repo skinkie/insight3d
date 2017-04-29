@@ -78,7 +78,7 @@ struct UI_State {
 
 	// keyboard
 	Uint8 *keys;
-	std::map <int, Uint8> key_state; // pointer to array containing keys' state info (supplied by SDL)
+	std::map <int, bool> key_state; // pointer to array containing keys' state info (supplied by SDL)
 	std::map <int, bool> inspection_clear_keys, shot_clear_keys, overview_clear_keys;    // determines which key states should be automatically cleared
 	int keys_length; // length of the keys_state array
 

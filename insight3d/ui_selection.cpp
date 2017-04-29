@@ -276,6 +276,45 @@ bool ui_vertex_invisible(size_t vertex_id)
 	return ui_state.groups.data[vertices.data[vertex_id].group].hidden;
 }
 
+GLint
+gluUnProject(GLdouble winx, GLdouble winy, GLdouble winz,
+  const GLdouble modelMatrix[16],
+  const GLdouble projMatrix[16],
+  const GLint viewport[4],
+  GLdouble *objx, GLdouble *objy, GLdouble *objz)
+{
+double finalMatrix[16];
+double in[4];
+double out[4];
+
+//__gluMultMatricesd(modelMatrix, projMatrix, finalMatrix);
+//if (!__gluInvertMatrixd(finalMatrix, finalMatrix)) return(GL_FALSE);
+
+in[0]=winx;
+in[1]=winy;
+in[2]=winz;
+in[3]=1.0;
+
+/* Map x and y from window coordinates */
+in[0] = (in[0] - viewport[0]) / viewport[2];
+in[1] = (in[1] - viewport[1]) / viewport[3];
+
+/* Map to range -1 to 1 */
+in[0] = in[0] * 2 - 1;
+in[1] = in[1] * 2 - 1;
+in[2] = in[2] * 2 - 1;
+
+//__gluMultMatrixVecd(finalMatrix, in, out);
+if (out[3] == 0.0) return(GL_FALSE);
+out[0] /= out[3];
+out[1] /= out[3];
+out[2] /= out[3];
+*objx = out[0];
+*objy = out[1];
+*objz = out[2];
+return(GL_TRUE);
+}
+
 // perform 3d selection of vertices
 void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_Type operation) 
 {
@@ -307,22 +346,22 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
 	// go through all corners of selection box and reconstruct 2 points in different depth levels
 	for (char i = 0; i < 8; i++) 
 	{
-		/*gluUnProject(
+		gluUnProject(
 			i % 2 == 0 ? x1 : x2, i / 2 % 2 == 0 ? y1 : y2, i / 4, 
 			visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport, 
 			unprojected[i], unprojected[i] + 1, unprojected[i] + 2
-		);*/ 
+		); 
 
 		// denormalize to obtain 3d position of the corner in vertices' reference plane
 		visualization_denormalize_vector(unprojected[i]);
 	}
 
 	// also calculate position of some point inside the pyramid 
-	/*gluUnProject(
+	gluUnProject(
 		average_value(x1, x2), average_value(y1, y2), 0.5,
 		visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport, 
 		unprojected[8], unprojected[8] + 1, unprojected[8] + 2
-	);*/ 
+	); 
 
 	// also denormalize
 	visualization_denormalize_vector(unprojected[8]);

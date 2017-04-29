@@ -66,7 +66,7 @@ void ui_shot_mouse_selection()
 	// selection box modifiers 
 	Selection_Type operation = SELECTION_TYPE_REPLACEMENT; 
 
-	if (ui_state.keys[SDLK_LSHIFT] || ui_state.keys[SDLK_RSHIFT]) 
+	if (ui_state.keys[SDL_SCANCODE_LSHIFT] || ui_state.keys[SDL_SCANCODE_RSHIFT]) 
 	{
 		operation = SELECTION_TYPE_UNION;
 	}
@@ -105,7 +105,7 @@ bool ui_switch_shot(size_t shot_id)
 void ui_update_shot(const Uint32 delta_time)
 {
 	// shift changes behavior of cursor keys (translation vs. rotation)
-	if (!ui_state.keys[SDLK_LSHIFT] && !ui_state.keys[SDLK_RSHIFT])
+	if (!ui_state.keys[SDL_SCANCODE_LSHIFT] && !ui_state.keys[SDL_SCANCODE_RSHIFT])
 	{
 		// * deleting selected points * 
 		if (ui_state.keys[SDLK_DELETE])

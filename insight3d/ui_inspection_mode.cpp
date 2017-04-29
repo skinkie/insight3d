@@ -121,13 +121,13 @@ void ui_update_inspection(const Uint32 delta_time)
 	// change camera position and/or rotation
 	if (no_revert)
 	{
-		if (ui_state.keys[SDLK_LEFT]) visualization_state.R[Y] += camera_rot;
-		if (ui_state.keys[SDLK_RIGHT]) visualization_state.R[Y] -= camera_rot;
+		if (ui_state.keys[SDL_SCANCODE_LEFT]) visualization_state.R[Y] += camera_rot;
+		if (ui_state.keys[SDL_SCANCODE_RIGHT]) visualization_state.R[Y] -= camera_rot;
 	}
 	else
 	{
-		if (ui_state.keys[SDLK_LEFT]) visualization_state.R[Y] -= camera_rot;
-		if (ui_state.keys[SDLK_RIGHT]) visualization_state.R[Y] += camera_rot;
+		if (ui_state.keys[SDL_SCANCODE_LEFT]) visualization_state.R[Y] -= camera_rot;
+		if (ui_state.keys[SDL_SCANCODE_RIGHT]) visualization_state.R[Y] += camera_rot;
 	}
 	if (!sdl_shift_pressed())
 	{
@@ -185,8 +185,8 @@ void ui_update_inspection(const Uint32 delta_time)
 	{
 		const double camera_step = ui_state.inspection_camera_rotation_speed * (delta_time / 1000.0);
 
-		if (ui_state.keys[SDLK_LEFT]) visualization_state.R[Y] -= camera_step;
-		if (ui_state.keys[SDLK_RIGHT]) visualization_state.R[Y] += camera_step;
+		if (ui_state.keys[SDL_SCANCODE_LEFT]) visualization_state.R[Y] -= camera_step;
+		if (ui_state.keys[SDL_SCANCODE_RIGHT]) visualization_state.R[Y] += camera_step;
 		if (ui_state.keys[SDLK_UP]) visualization_state.R[X] -= camera_step;
 		if (ui_state.keys[SDLK_DOWN]) visualization_state.R[X] += camera_step;
 	}*/
@@ -237,7 +237,7 @@ void ui_inspection_mouse_selection()
 	// selection box modifiers 
 	Selection_Type operation = SELECTION_TYPE_REPLACEMENT; 
 
-	if (ui_state.keys[SDLK_LSHIFT] || ui_state.keys[SDLK_RSHIFT]) 
+	if (ui_state.keys[SDL_SCANCODE_LSHIFT] || ui_state.keys[SDL_SCANCODE_RSHIFT]) 
 	{
 		if (!ui_state.keys[SDLK_LCTRL] && !ui_state.keys[SDLK_RCTRL]) 
 		{
