@@ -24,6 +24,8 @@
 
 #include "tool_selection.h"
 
+#include <opencv2/calib3d/calib3d.hpp>
+
 // tool's constants 
 const double TOOL_SELECTION_ZOOM_RATE = 1.3;
 const double TOOL_SELECTION_ZOOM_SNAPPING_MIN = 0.5 / TOOL_SELECTION_ZOOM_RATE + 0.001; 

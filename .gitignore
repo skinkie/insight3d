@@ -1,7 +1,6 @@
-*.exe
 *.dll
 *.orig
-insight3d
+*.exe
 eucsbademo
 # Compiled Object files
 *.slo
@@ -16,3 +15,4 @@ eucsbademo
 *.lai
 *.la
 *.a
+build*

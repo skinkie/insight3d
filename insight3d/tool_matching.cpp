@@ -24,6 +24,8 @@
 
 #include "tool_matching.h"
 
+#include <opencv2/calib3d/calib3d.hpp>
+
 // parameter ids
 const size_t 
 	MATCHING_METHOD = 0, 

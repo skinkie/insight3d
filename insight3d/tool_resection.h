@@ -29,7 +29,7 @@
 #include "geometry_routines.h"
 #include "ui_list.h"
 #include "actions.h"
-#include "sba/sba.h"
+#include "sba.h"
 
 void tool_resection_create();
 void tool_resection_current_camera();

@@ -23,7 +23,8 @@
 */
 
 #include "tool_triangulation.h"
-#include "/usr/include/opencv2/legacy/legacy.hpp"
+
+#include <opencv2/legacy/legacy.hpp>
 
 const size_t compute_normals_K = 200;
 

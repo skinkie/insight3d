@@ -24,6 +24,9 @@
 
 #include "tool_calibration.h"
 
+#include "sba.h"
+#include <opencv2/calib3d/calib3d.hpp>
+
 // tool's state structure
 struct Tool_Calibration
 {
@@ -1947,10 +1950,11 @@ void calibration_bundle()
 
 	// * call bundle adjustment routine * 
 	sba_motstr_levmar(
-		Xs_count,
-		Ps_count,
-		0,
-		visibility_mask,
+		Xs_count, //n
+		0, //ncon
+		Ps_count, //m
+		0, //mcon
+		visibility_mask, //vmask
 		parameters,
 		BA_CAMERA_PARAMETERS,
 		4,

@@ -4,8 +4,8 @@
 // #include <stdbool.h> // todo
 #include "SDL.h"
 #include "SDL_opengl.h"
-#include "cv.h"
-#include "highgui.h"
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <math.h>
 
 #ifndef SIZE_MAX

@@ -284,7 +284,7 @@ CvMat * mvg_triangulation_RANSAC(
 	// fail immediately if the solution is underdetermined 
 	if (n < 2)
 	{
-		return false;
+		return NULL;
 	}
 
 	// allocate
@@ -367,7 +367,7 @@ CvMat * mvg_triangulation_RANSAC(
 	if (best_inliers_count < 2)
 	{
 		FREE(best_status);
-		return false;
+		return NULL;
 	}
 
 	// calculate camera calibration using only inliers

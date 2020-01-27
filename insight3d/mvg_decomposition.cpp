@@ -24,6 +24,7 @@
 
 #include "mvg_decomposition.h"
 #include "cv_extensions.h"
+#include <algorithm>
 
 // decomposition of projection matrix into rotation, translation and internal calibration 
 bool mvg_finite_projection_matrix_decomposition(CvMat * const P, CvMat * const K, CvMat * const R, CvMat * const T)

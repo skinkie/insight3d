@@ -24,6 +24,8 @@
 
 #include "core_image_loader.h"
 
+#include <opencv2/imgproc/imgproc_c.h>
+
 DYNAMIC_STRUCTURE(Image_Loader_Requests, Image_Loader_Request);
 DYNAMIC_STRUCTURE(Image_Loader_Shots, Image_Loader_Shot);
 
