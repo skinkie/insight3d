@@ -863,7 +863,7 @@ void gui_menu_event_mousedown(GUI_Panel* panel)
 
     // show all it's ancestors
     GUI_Panel *parent = panel, *root = NULL;
-    while (parent = parent->menu_parent) {
+    while ((parent = parent->menu_parent)) {
         gui_set_panel_visible(parent, true);
 
         // show immediate children

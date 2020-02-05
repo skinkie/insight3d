@@ -419,7 +419,7 @@ void tool_register_enum(size_t id, const char* const title, const char* labels[]
     size_t i = 0;
     const char* label;
 
-    while (label = tools_state.tools[n].parameters.data[id].enum_labels[i++]) {
+    while ((label = tools_state.tools[n].parameters.data[id].enum_labels[i++])) {
         tools_state.tools[n].tab_last
             = gui_new_radio_button(tools_state.tools[n].tab, tools_state.tools[n].tab_last, group, label);
     }

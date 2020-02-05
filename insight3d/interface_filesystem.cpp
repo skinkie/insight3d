@@ -36,7 +36,7 @@ char* interface_filesystem_dirpath(const char* const filename)
 
     // find last path separator
     const char *last_separator = NULL, *separator = filename - 1;
-    while (separator = strpbrk(separator + 1, FILESYSTEM_PATH_SEPARATORS)) {
+    while ((separator = strpbrk(separator + 1, FILESYSTEM_PATH_SEPARATORS))) {
         last_separator = separator;
     }
 
@@ -61,7 +61,7 @@ char* interface_filesystem_extract_filename(const char* filename)
 
     // find last path separator
     const char *last_separator = NULL, *separator = filename;
-    while (separator = strpbrk(++separator, FILESYSTEM_PATH_SEPARATORS)) {
+    while ((separator = strpbrk(++separator, FILESYSTEM_PATH_SEPARATORS))) {
         last_separator = separator;
     }
 
