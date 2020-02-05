@@ -640,8 +640,8 @@ char* tool_choose_file()
         "Open File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_OPEN,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+        "gtk-cancel", GTK_RESPONSE_CANCEL,
+        "gtk-open", GTK_RESPONSE_ACCEPT,
         NULL);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -693,8 +693,8 @@ char* tool_choose_new_file()
         "Save File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_SAVE,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+        "gtk-cancel", GTK_RESPONSE_CANCEL,
+        "gtk-save", GTK_RESPONSE_ACCEPT,
         NULL);
 
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);

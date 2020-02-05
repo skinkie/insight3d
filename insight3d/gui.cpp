@@ -74,10 +74,6 @@ bool gui_helper_initialize_sdl(const int width, const int height)
         return false;
     }
 
-#ifdef LINUX
-    gtk_init(NULL, NULL);
-#endif
-
     // set the flags
     Uint32 video_flags = SDL_WINDOW_OPENGL;
     video_flags |= SDL_WINDOW_RESIZABLE;
