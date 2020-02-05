@@ -37,7 +37,7 @@ bool geometry_calibration_from_P(const size_t shot_id);
 void geometry_calibration_from_decomposed_matrices(const size_t shot_id);
 
 // lattice test
-// todo check for points out of picture
+// TODO: check for points out of picture
 bool geometry_lattice_test(const size_t shot_id);
 
 #endif

@@ -125,7 +125,7 @@ bool ui_add_vertex_to_selection(const size_t vertex_id)
     LAST(ui_state.selection_list).item_id = vertex_id;
     LAST(ui_state.selection_list).item_type = GEOMETRY_VERTEX;
     vertices.data[vertex_id].selected = true;
-    return true; // todo true only if the addition succeeded
+    return true; // TODO: true only if the addition succeeded
 }
 
 // remove vertex from selection box
@@ -161,7 +161,7 @@ bool ui_add_point_to_selection(const size_t shot_id, const size_t point_id)
     LAST(ui_state.selection_list).item_id = point_id;
     LAST(ui_state.selection_list).item_type = GEOMETRY_POINT;
     shots.data[shot_id].points.data[point_id].selected = true;
-    return true; // todo true only if the addition succeeded
+    return true; // TODO: true only if the addition succeeded
 }
 
 // remove point from selection
@@ -522,7 +522,7 @@ void ui_2d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                         }
                     }
     }
-    /* // todo else
+    /* // TODO: else
 	{
 		// remove points inside selection box from current selection (i.e. 'remove operation')
 		for ALL_SET_ITEMS(visualization_state.selection_list, i)

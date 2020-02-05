@@ -1,7 +1,7 @@
 #ifndef GUI_MAIN
 #define GUI_MAIN
 
-// #include <stdbool.h> // todo
+// #include <stdbool.h> // TODO
 #include "SDL.h"
 #include "SDL_opengl.h"
 #include <math.h>
@@ -85,7 +85,7 @@ struct GUI_Panel {
     int caption_width, caption_height;
     GLuint caption_texture_id;
 
-    // todo use cases on the following
+    // TODO: use cases on the following
 
     // menu
     GUI_Menu_Type menu_type;

@@ -287,7 +287,7 @@ void geometry_loader_SAX_start_element(geometry_loader_SAX_state* state, const x
 
             // process attributes
 
-            // todo save shots name and use it instead of it's filename
+            // TODO: save shots name and use it instead of it's filename
             if (xmlStrcmp(*attr, XML_ATTR_NAME) == 0)
                 state->current_shot->name = (char*)xmlStrdup(value); // note conversion
             // width
@@ -486,7 +486,8 @@ void geometry_loader_SAX_characters(geometry_loader_SAX_state* state, const xmlC
 {
 }
 
-// load data from realviz xml file // todo probably rename this function to reflect that it loads .rzml, .rzi files
+// load data from realviz xml file
+// TODO: probably rename this function to reflect that it loads .rzml, .rzi files
 void geometry_loader(const char* xml_filename, Shots& shots)
 {
     // initialization
@@ -544,7 +545,7 @@ bool geometry_loader_rz3(const char* xml_filename, Shots& shots)
             t + 0, t + 1, t + 2,
             R + 0, R + 1, R + 2,
             R + 3, R + 4, R + 5,
-            R + 6, R + 7, R + 8); // TODO use entry_read
+            R + 6, R + 7, R + 8); // TODO: use entry_read
 
         // save it
         printf("accessing shot %d\n", shot_id);
@@ -604,7 +605,7 @@ bool geometry_loader_vertices(const char* txt_filename, Vertices& vertices, size
             LAST(vertices).group = group;
             LAST(vertices).reconstructed = true;
         }
-        return true; // todo check bounds
+        return true; // TODO: check bounds
         // But if the file couldn't be opened, return false.
     } else {
         return false;

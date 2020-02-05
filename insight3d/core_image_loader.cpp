@@ -82,7 +82,7 @@ void image_loader_free_full()
             // no photo to release found...
             // {}
             // strong todo
-            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_full_count will probably fix this right away"); // todo change this message
+            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_full_count will probably fix this right away"); // TODO: change this message
         }
     }
 }
@@ -110,7 +110,7 @@ void image_loader_free_low()
             // no photo to release found...
             // {}
             // strong todo
-            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_low_count will probably fix this right away"); // todo change this message
+            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_low_count will probably fix this right away"); // TODO: change this message
         }
     }
 }
@@ -611,7 +611,7 @@ bool image_loader_initialize(const int cache_full_count, const int cache_low_cou
 }
 
 // release image loader subsystem
-// todo release also shots and requests
+// TODO: release also shots and requests
 void image_loader_release()
 {
     pthread_mutex_lock(&global_lock);
@@ -1086,7 +1086,7 @@ void image_loader_flush_texture_ids()
         pthread_mutex_unlock(&global_lock);
 }
 
-// todo set suggested flag
+// TODO: set suggested flag
 
 // clear all suggested flags
 void image_loaded_flush_suggested()

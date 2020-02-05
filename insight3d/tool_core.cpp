@@ -669,8 +669,7 @@ char* tool_choose_new_file()
 
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
 
-    // TODO
-    // if (user_edited_a_new_document)
+    // TODO: // if (user_edited_a_new_document)
     {
         gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), ".");
         gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "Untitled document");

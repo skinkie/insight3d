@@ -34,7 +34,7 @@ bool mvg_finite_projection_matrix_decomposition(CvMat* const P, CvMat* const K, 
     int m = P->rows, n = P->cols, nm = std::min(m, n);
 
     CvMat *W = cvCreateMat(nm, 1, CV_64F), *V_transposed = cvCreateMat(4, 4, CV_64F);
-    cvSVD(P, W, NULL, V_transposed, CV_SVD_V_T); // todo check singular values of P for numerical stability
+    cvSVD(P, W, NULL, V_transposed, CV_SVD_V_T); // TODO: check singular values of P for numerical stability
 
     // check for camera at infinity
     const double w = OPENCV_ELEM(V_transposed, 3, 3);
@@ -68,7 +68,7 @@ bool mvg_finite_projection_matrix_decomposition(CvMat* const P, CvMat* const K, 
     // multiply the calibration matrix so that [3, 3] entry is 1
     const double K33 = OPENCV_ELEM(K, 2, 2);
     if (K33 == 0) {
-        // todo probably inifinite camera, we could handle this (and we've probably already done so,
+        // TODO: probably inifinite camera, we could handle this (and we've probably already done so,
         // since we check for inifinite cameras in the code above)
         cvReleaseMat(&V_transposed);
         cvReleaseMat(&W);

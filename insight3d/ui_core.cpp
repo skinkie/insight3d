@@ -45,8 +45,8 @@ bool ui_initialize()
     ui_state.mouse_down_ticks = 0;
     ui_state.mouse_down = false;
 
-    // todo options
-    // todo rewrite
+    // TODO: options
+    // TODO: rewrite
 
     // shot clear keys
     ui_state.shot_clear_keys.clear();

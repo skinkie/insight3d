@@ -30,11 +30,11 @@
 #include "interface_opencv.h"
 
 // find major plane in point cloud using RANSAC
-// todo time bounds
-// todo normalization
-// todo refactor code (look at RANSAC implementation from OpenCV)
-// todo check that we have at least 3 _reconstructed_ vertices
-// todo optimize this (sqrt...)
+// TODO: time bounds
+// TODO: normalization
+// TODO: refactor code (look at RANSAC implementation from OpenCV)
+// TODO: check that we have at least 3 _reconstructed_ vertices
+// TODO: optimize this (sqrt...)
 double* tool_plane_extraction(Vertices& vertices, double threshold = 0.5, bool flatten_inliers = false, size_t group = 0);
 
 // version using only a subset of vertices

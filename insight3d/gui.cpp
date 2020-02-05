@@ -730,7 +730,7 @@ void gui_opengl_vertex(double x, double y)
 // cleanup the stuff allocated by gui_helper_initialize
 void gui_release()
 {
-    // todo
+    // TODO:
     // note we should release all caption_* data, textures, ...
     // meh
 }
@@ -1017,7 +1017,7 @@ void gui_set_checkbox(GUI_Panel* checkbox, bool value)
 }
 
 // get the value represented by the checkbox
-bool gui_get_checkbox(GUI_Panel* checkbox) // todo we might want to unify the gui_is_* and gui_get_* naming conventions
+bool gui_get_checkbox(GUI_Panel* checkbox) // TODO: we might want to unify the gui_is_* and gui_get_* naming conventions
 {
     return checkbox->i != 0;
 }

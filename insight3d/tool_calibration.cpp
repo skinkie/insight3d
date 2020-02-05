@@ -210,7 +210,7 @@ void calibration_update_inliers(const size_t calibration_id, const size_t count,
 }
 
 // update current estimation of the set of inlying points for the whole calibration
-// todo
+// TODO
 void calibration_update_inliers(const size_t calibration_id)
 {
     ASSERT_IS_SET(calibrations, calibration_id);
@@ -223,7 +223,7 @@ void calibration_update_inliers(const size_t calibration_id)
         for
             ALL(calibration->Ps, i)
             {
-                // todo
+                // TODO
             }
 }
 
@@ -727,7 +727,7 @@ bool calibration_auto_begin(
         printf("  List of image pairs considered to start the calibration:\n");
         printf("  ");
         for (size_t i = 0; i < best_count; i++) {
-            // todo this doesn't work with MSVC
+            // TODO: this doesn't work with MSVC
             printf("%zd-%zd[%zd] ", best_pairs[2 * i + 0], best_pairs[2 * i + 1], best_corr[i]);
         }
         if (best_count == 0)
@@ -804,7 +804,7 @@ bool calibration_auto_step(
         printf("Refining calibration using bundle adjustment.\n");
         calibration_bundle();
         calibration->refined = true;
-        opencv_begin(); // todo unify calibration_*'s requirement for opencv lock
+        opencv_begin(); // TODO: unify calibration_*'s requirement for opencv lock
         // calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
         opencv_end();
         printf("  Bundle adjustment done.\n");
@@ -962,7 +962,7 @@ bool calibration_auto_end(
     // final refinement
     printf("Refining calibration using bundle adjustment.\n");
     calibration_bundle();
-    opencv_begin(); // todo unify calibration_*'s requirement for opencv lock
+    opencv_begin(); // TODO: unify calibration_*'s requirement for opencv lock
     calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
     opencv_end();
 
@@ -1155,7 +1155,7 @@ void tool_calibration_add_views()
 
 // internal routine used to rectify to metric/affine reconstruction using the knowledge of principal point,
 // aspect ratio and zero skew
-// todo investigate the need for opencv lock
+// TODO: investigate the need for opencv lock
 void calibration_rectify(bool affine)
 {
     // if no calibration is selected, we don't have anything to do
@@ -1828,7 +1828,7 @@ void calibration_bundle()
                 const Calibration_Camera* camera = calibration->Ps.data + i;
 
                 // go through this cameras points
-                // todo
+                // TODO
             }
 
         // * release structures *

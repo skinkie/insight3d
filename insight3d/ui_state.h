@@ -99,7 +99,7 @@ struct UI_State {
 
     // dragging
     double ground_phi_dragging_start, ground_alpha_dragging_start; // changing camera angle in ground inspection mode
-    double ground_phi_dragging_speed, ground_alpha_dragging_speed; // todo
+    double ground_phi_dragging_speed, ground_alpha_dragging_speed; // TODO
     double ground_POI_dragging_start[3]; // changing camera position in ground inspection mode
 
     // * workflow indices - current items and selections *

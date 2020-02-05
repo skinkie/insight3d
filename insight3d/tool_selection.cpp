@@ -567,7 +567,7 @@ void debug_print_Ps()
                         for (int i = 0; i < 9; i++) {
                             double d;
                             const int entry_read = fscanf(fp, "%lf", &d);
-                            // TODO use entry read
+                            // TODO: use entry read
                             OPENCV_ELEM(H, i / 3, i % 3) = d;
                         }
 
@@ -583,7 +583,7 @@ void debug_print_Ps()
 
                 // print projection matrix
                 for (int i = 0; i < P->rows; i++) {
-                    const double q = i < 2 ? 0.5 : 1; // todo what's this for?
+                    const double q = i < 2 ? 0.5 : 1; // TODO: what's this for?
                     for (int j = 0; j < P->cols; j++) {
                         Ps_out << q * OPENCV_ELEM(P, i, j) << " ";
                     }

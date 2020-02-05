@@ -68,7 +68,7 @@ bool geometry_initialize()
 // * destructors *
 
 // release shot structure
-// todo recheck this
+// TODO: recheck this
 void geometry_release_shot(Shot*& shot)
 {
     if (image_loader_nonempty_handle(shot->image_loader_request)) {
@@ -267,7 +267,7 @@ void geometry_sort_double_indices_secondary_desc(Double_Indices* indices)
 // * deleting *
 
 // delete point
-void geometry_delete_point(size_t shot_id, size_t point_id) // todo remove it from contours
+void geometry_delete_point(size_t shot_id, size_t point_id) // TODO: remove it from contours
 {
     ASSERT_IS_SET(shots, shot_id);
     ASSERT_IS_SET(shots.data[shot_id].points, point_id);
@@ -509,7 +509,7 @@ void geometry_build_vertices_incidence()
 {
     // initialize dynamic list (we have one entry for each vertex with
     // each entry containing another dynamic list of shots)
-    DYN_INIT(vertices_incidence); // todo fix leaking
+    DYN_INIT(vertices_incidence); // TODO: fix leaking
 
     // go through all shots
         for

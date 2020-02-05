@@ -51,7 +51,7 @@ void tool_points_create()
     tool_register_toolbar_button("Points creator");
 }
 
-// refresh lists in UI containing information modified by this tool // todo remove
+// refresh lists in UI containing information modified by this tool // TODO: remove
 void tool_points_refresh_UI()
 {
 }

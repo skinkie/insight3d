@@ -100,7 +100,7 @@ void tool_resection_all_enough()
             ALL(shots, i)
             {
                 if (!shots.data[i].calibrated && query_count_reconstructed_points_on_shot(i) >= 12) {
-                    if (action_camera_resection(i, false, false)) // todo set .resection inside action_camera (in all ui_event_menu_resection_*)
+                    if (action_camera_resection(i, false, false)) // TODO: set .resection inside action_camera (in all ui_event_menu_resection_*)
                     {
                         shots.data[i].resected = true;
                     }

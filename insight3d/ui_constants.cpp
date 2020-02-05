@@ -26,7 +26,7 @@
 
 // * drawing styles *
 
-// todo UI_STYLE_ constants are now somewhat unused since the UI was being redone, integrate this
+// TODO: UI_STYLE_ constants are now somewhat unused since the UI was being redone, integrate this
 
 // background
 const float UI_STYLE_BACKGROUND[3] = { 0.0F, 0.0F, 0.0F };
@@ -39,7 +39,7 @@ const Drawing_Style UI_STYLE_POLYGON = { { 1.0F, 1.0F, 1.0F }, 1.0F, 1.0F, 1.0F 
 const Drawing_Style UI_STYLE_POINT = { { 1.0F, 1.0F, 1.0F }, 1.0F, 2.0F, 1.0F };
 const Drawing_Style UI_STYLE_POINT_NOT_CREDIBLE = { { 0.7F, 0.7F, 0.7F }, 1.0F, 2.0F, 1.0F };
 const Drawing_Style UI_STYLE_POLYGON_JOINING_POINTS = { { 1.0F, 1.0F, 1.0F }, 1.0F, 1.0F, 1.0F };
-const Drawing_Style UI_STYLE_CONTOUR = { { 0.7F, 0.7F, 0.7F }, 1.0F, 1.0F, 1.0F }; // todo
+const Drawing_Style UI_STYLE_CONTOUR = { { 0.7F, 0.7F, 0.7F }, 1.0F, 1.0F, 1.0F }; // TODO
 
 // special objects
 const Drawing_Style UI_STYLE_CAMERA = { { 1.0F, 1.0F, 1.0F }, 1.0F, 2.0F, 1.0F };

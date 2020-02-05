@@ -303,7 +303,7 @@ bool geometry_export_vrml(const char* filename, Vertices& vertices, Polygons_3d&
 bool geometry_export_sandy3d(const char* filename, Vertices& vertices, Polygons_3d& polygons, bool export_vertices)
 {
     // open file for output
-    std::ofstream as_output(filename), stars_output((std::string(filename) + ".stars.txt").c_str()); // todo remove point cloud extraction for release
+    std::ofstream as_output(filename), stars_output((std::string(filename) + ".stars.txt").c_str()); // TODO: remove point cloud extraction for release
 
     if (!as_output) {
         core_state.error = CORE_ERROR_UNABLE_TO_OPEN_FILE;

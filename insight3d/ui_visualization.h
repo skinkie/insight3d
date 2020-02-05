@@ -74,7 +74,7 @@ void visualization_export_opengl_matrices();
 // prepare inspection projection
 void visualization_prepare_inspection_projection(double fovx);
 
-// calculate the view_zoom factor in x axis // todo write better description
+// calculate the view_zoom factor in x axis // TODO: write better description
 const double visualization_get_zoom_x();
 
 // calculate the viewport coordinates on OpenGL clipping plane (using current zooming and scrolling settings)

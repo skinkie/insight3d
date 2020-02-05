@@ -179,7 +179,7 @@ void ui_event_redraw()
     // calculation
     case UI_MODE_CALCULATION:
 
-        // todo probably some progress bar
+        // TODO: probably some progress bar
 
         break;
     case UI_MODE_UNSPECIFIED:
@@ -230,7 +230,8 @@ void ui_event_mouse_button_down(Uint8 button, Uint16 x, Uint16 y)
             ui_state.mouse_no_dragging = false;
         }
     } else if (ui_state.mode == UI_MODE_INSPECTION) {
-        // currently there are no tools in inspection mode // todo
+        // currently there are no tools in inspection mode
+        // TODO
         ui_inspection_mouse_button_down();
     }
 }
@@ -366,7 +367,8 @@ void ui_event_mouse_button_up(Uint8 button, Uint16 x, Uint16 y)
                 tools_state.tools[current_tool].click(ui_state.tool_down_x, ui_state.tool_down_y, button);
             }
         } else if (ui_state.mode == UI_MODE_INSPECTION) {
-            // currently there are no tools in inspection mode // todo
+            // currently there are no tools in inspection mode
+            // TODO
             ui_inspection_mouse_click();
         }
     } else {

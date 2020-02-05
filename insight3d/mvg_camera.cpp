@@ -58,7 +58,7 @@ double mvg_projective_depth(CvMat* P, CvMat* X)
     // check for division by zero
     double denominator = T * M3_norm;
     if (denominator == 0)
-        return 1; // todo check if this happens iff P is camera at infini
+        return 1; // TODO: check if this happens iff P is camera at infini
 
     // return result
     return (d * w) / denominator;

@@ -149,7 +149,7 @@ CvMat* mvg_triangulation_SVD_affine(
 //   projected_points    - 2 x n matrix with i-th column representing the
 //                         coordinates on which the triangulated vertex
 //                         is visible on i-th camera
-//   normalize_A         - flag denotes if the matrix A should be normalized // todo
+//   normalize_A         - flag denotes if the matrix A should be normalized // TODO
 //   min_points          - the minimum number of points required for triangulation
 //   samples             - pointer to indices of points that should be used, if NULL is
 //                         supplied, all of them are used
@@ -230,7 +230,7 @@ CvMat* mvg_triangulation_SVD(
     }
 
     // use SVD to find our x
-    // todo check this
+    // TODO: check this
     CvMat* X = opencv_right_null_vector(A);
 
     // release memory

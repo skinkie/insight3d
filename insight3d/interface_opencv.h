@@ -29,7 +29,7 @@
 
 const double OPENCV_PI = 3.14159265358979323846;
 
-// macro for accessing double precision matrix elements // todo avoid using OpenCV macro
+// macro for accessing double precision matrix elements // TODO: avoid using OpenCV macro
 #define OPENCV_ELEM(matrix, i, j) (CV_MAT_ELEM((*(matrix)), double, (i), (j)))
 
 // thread safety
@@ -51,21 +51,21 @@ CvMat* opencv_create_I_matrix(const size_t n);
 CvMat* opencv_create_vector(const double a[], const size_t length);
 
 // x axis rotation matrix
-// todo optimize
+// TODO: optimize
 // note these matrices are transposes of conventional mathematical rotation matrices
 // (which is ugly, but it just so happens, that we need it this way)
 CvMat* opencv_create_rotation_matrix_x(const double angle);
 
 // y axis rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_y(const double angle);
 
 // z axis rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_z(const double angle);
 
 // euler angles to rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_from_euler(const double euler[], bool reverse_order = true);
 
 // project vertex - used only for visualization purposes

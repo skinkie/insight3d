@@ -681,7 +681,7 @@ bool mvg_autocalibration_2(CvMat** Ps, double* principal_points, const size_t n,
             best_inliers_count = inliers_count;
         }
 
-        // TODO release allocated matrices
+        // TODO: release allocated matrices
         cvReleaseMat(&rectified_K);
         cvReleaseMat(&rectified_R);
         cvReleaseMat(&rectified_T);

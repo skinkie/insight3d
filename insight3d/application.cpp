@@ -59,7 +59,7 @@ bool initialization()
     printf("ok\n"); // if we're still alive, everything's fine
 
     // initialize the whole package
-    return core_debug_initialize() && debug_initialize() && // todo merge this with core_debug
+    return core_debug_initialize() && debug_initialize() && // TODO: merge this with core_debug
         core_initialize() && geometry_initialize() && image_loader_initialize(4, 32) && ui_initialize() && visualization_initialize() && ui_create();
 }
 
