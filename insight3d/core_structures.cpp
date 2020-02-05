@@ -1,4 +1,4 @@
- /*
+/*
 
   insight3d - image based 3d modelling software
   Copyright (C) 2007-2008  Lukas Mach
@@ -25,8 +25,8 @@
 #include "core_structures.h"
 #include <climits>
 
-// simple routines 
+// simple routines
 bool dyn_found(const size_t index)
 {
-	return index != SIZE_MAX;
+    return index != SIZE_MAX;
 }

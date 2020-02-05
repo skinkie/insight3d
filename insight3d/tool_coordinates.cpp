@@ -30,70 +30,69 @@
 // create UI elements for changing coordinates
 void tool_coordinates_create()
 {
-	tool_create(UI_MODE_UNSPECIFIED, "Coordinate frames", "Changing world-space coordinate frames");
-	tool_register_menu_function("Main menu|Modelling|Coordinate frame...|Reorient|", coordinates_reorient_using_current_camera);
+    tool_create(UI_MODE_UNSPECIFIED, "Coordinate frames", "Changing world-space coordinate frames");
+    tool_register_menu_function("Main menu|Modelling|Coordinate frame...|Reorient|", coordinates_reorient_using_current_camera);
 }
 
-// rotate the world-space so that the coordinate frame is orientet in the same direction as current camera 
+// rotate the world-space so that the coordinate frame is orientet in the same direction as current camera
 void coordinates_reorient_using_current_camera()
 {
-	if (INDEX_IS_SET(ui_state.current_shot) && shots.data[ui_state.current_shot].calibrated)
-	{
-		coordinates_rotate_all_cameras(ui_state.current_shot);
-		visualization_process_data(vertices, shots);
-	}
+    if (INDEX_IS_SET(ui_state.current_shot) && shots.data[ui_state.current_shot].calibrated) {
+        coordinates_rotate_all_cameras(ui_state.current_shot);
+        visualization_process_data(vertices, shots);
+    }
 }
 
 // rotate space so that the coordinate frame coincides with chosen camera orientation
-bool coordinates_rotate_all_cameras(size_t shot_id) 
+bool coordinates_rotate_all_cameras(size_t shot_id)
 {
-	ASSERT(validate_shot(shot_id), "invalid shot supplied when transforming calibration into camera's coordinate frame"); 
-	const Shot * const shot = shots.data + shot_id; 
+    ASSERT(validate_shot(shot_id), "invalid shot supplied when transforming calibration into camera's coordinate frame");
+    const Shot* const shot = shots.data + shot_id;
 
-	opencv_begin();
-	CvMat * H = cvCreateMat(4, 4, CV_64F), * I = cvCreateMat(4, 4, CV_64F);
-	cvZero(I);
-	cvZero(H); 
+    opencv_begin();
+    CvMat *H = cvCreateMat(4, 4, CV_64F), *I = cvCreateMat(4, 4, CV_64F);
+    cvZero(I);
+    cvZero(H);
 
-	OPENCV_ELEM(I, 0, 0) = -1;
-	OPENCV_ELEM(I, 1, 1) = 1;
-	OPENCV_ELEM(I, 2, 2) = 1;
-	OPENCV_ELEM(I, 3, 3) = 1;
-	OPENCV_ELEM(H, 3, 3) = 1;
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			OPENCV_ELEM(H, i, j) = OPENCV_ELEM(shot->rotation, j, i);
-		}
-	}
-	opencv_end();
-	cvMatMul(H, I, H);
-	cvReleaseMat(&I);
+    OPENCV_ELEM(I, 0, 0) = -1;
+    OPENCV_ELEM(I, 1, 1) = 1;
+    OPENCV_ELEM(I, 2, 2) = 1;
+    OPENCV_ELEM(I, 3, 3) = 1;
+    OPENCV_ELEM(H, 3, 3) = 1;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            OPENCV_ELEM(H, i, j) = OPENCV_ELEM(shot->rotation, j, i);
+        }
+    }
+    opencv_end();
+    cvMatMul(H, I, H);
+    cvReleaseMat(&I);
 
-	printf("Coordinate frame aligned with camera.\n");
+    printf("Coordinate frame aligned with camera.\n");
 
-	return coordinates_apply_homography_to_cameras(H);
-	// todo release H
+    return coordinates_apply_homography_to_cameras(H);
+    // todo release H
 }
 
 // applies homography to all calibrated cameras
-bool coordinates_apply_homography_to_cameras(CvMat * H)
+bool coordinates_apply_homography_to_cameras(CvMat* H)
 {
-	for ALL(shots, i) 
-	{
-		// consider only calibrated shots 
-		const Shot * const shot = shots.data + i;
-		if (!shot->calibrated) continue;
+        for
+            ALL(shots, i)
+            {
+                // consider only calibrated shots
+                const Shot* const shot = shots.data + i;
+                if (!shot->calibrated)
+                    continue;
 
-		// multiply the projection matrix 
-		opencv_begin();
-		cvMatMul(shot->projection, H, shot->projection);
-		opencv_end();
+                // multiply the projection matrix
+                opencv_begin();
+                cvMatMul(shot->projection, H, shot->projection);
+                opencv_end();
 
-		// we need to decompose projection matrix to remain consistent 
-		geometry_calibration_from_P(i);
-	}
+                // we need to decompose projection matrix to remain consistent
+                geometry_calibration_from_P(i);
+            }
 
-	return true;
+        return true;
 }

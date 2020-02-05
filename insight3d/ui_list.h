@@ -25,11 +25,11 @@
 #ifndef __UI_LIST
 #define __UI_LIST
 
-#include "ui_state.h"
 #include "ui_core.h"
+#include "ui_state.h"
 
 void ui_list_update();
-void ui_next_shot(GUI_Panel * panel); 
-void ui_prev_shot(GUI_Panel * panel);
+void ui_next_shot(GUI_Panel* panel);
+void ui_prev_shot(GUI_Panel* panel);
 
 #endif

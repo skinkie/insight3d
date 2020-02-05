@@ -27,86 +27,89 @@
 // generate textures
 void tool_image_generate_textures()
 {
-	geometry_extract_all_textures();
+    geometry_extract_all_textures();
 }
 
-// colorize vertices 
+// colorize vertices
 void tool_image_colorize()
 {
-	// allocate memory for accumulators
-	int
-		* accum_red = ALLOC(int, vertices.count),
-		* accum_green = ALLOC(int, vertices.count), 
-		* accum_blue = ALLOC(int, vertices.count);
-	int 
-		* count = ALLOC(int, vertices.count); 
+    // allocate memory for accumulators
+    int
+        *accum_red
+        = ALLOC(int, vertices.count),
+        *accum_green = ALLOC(int, vertices.count),
+        *accum_blue = ALLOC(int, vertices.count);
+    int* count = ALLOC(int, vertices.count);
 
-	memset(accum_red, 0, sizeof(int) * vertices.count);
-	memset(accum_green, 0, sizeof(int) * vertices.count);
-	memset(accum_blue, 0, sizeof(int) * vertices.count);
-	memset(count, 0, sizeof(int) * vertices.count);
+    memset(accum_red, 0, sizeof(int) * vertices.count);
+    memset(accum_green, 0, sizeof(int) * vertices.count);
+    memset(accum_blue, 0, sizeof(int) * vertices.count);
+    memset(count, 0, sizeof(int) * vertices.count);
 
-	// go through all photos
-	int loaded_img_counter = 0;
-	for ALL(shots, shot_id)
-	{
-		const Shot * const shot = shots.data + shot_id;
+    // go through all photos
+    int loaded_img_counter = 0;
+        for
+            ALL(shots, shot_id)
+            {
+                const Shot* const shot = shots.data + shot_id;
 
-		// load the image
-		IplImage * img = NULL;
+                // load the image
+                IplImage* img = NULL;
 
-		// take every point on this image
-		for ALL(shot->points, point_id)
-		{
-			Point * point = shot->points.data + point_id;
+                // take every point on this image
+                for
+                    ALL(shot->points, point_id)
+                    {
+                        Point* point = shot->points.data + point_id;
 
-			if (!img)
-			{
-				img = cvLoadImage(shot->image_filename);
-				if (!img) continue;
-			}
+                        if (!img) {
+                            img = cvLoadImage(shot->image_filename);
+                            if (!img)
+                                continue;
+                        }
 
-			const int
-				x = (int)(point->x * img->width),
-				y = (int)(point->y * img->height);
+                        const int
+                            x
+                            = (int)(point->x * img->width),
+                            y = (int)(point->y * img->height);
 
-			accum_red[point->vertex] += ((uchar*)(img->imageData + img->widthStep*y))[x*3+2];
-			accum_green[point->vertex] += ((uchar*)(img->imageData + img->widthStep*y))[x*3+1];
-			accum_blue[point->vertex] += ((uchar*)(img->imageData + img->widthStep*y))[x*3+0];
-			count[point->vertex]++;
-		}
+                        accum_red[point->vertex] += ((uchar*)(img->imageData + img->widthStep * y))[x * 3 + 2];
+                        accum_green[point->vertex] += ((uchar*)(img->imageData + img->widthStep * y))[x * 3 + 1];
+                        accum_blue[point->vertex] += ((uchar*)(img->imageData + img->widthStep * y))[x * 3 + 0];
+                        count[point->vertex]++;
+                    }
 
-		// release resources
-		if (img) 
-		{
-			printf("[%d]", loaded_img_counter);
-			cvReleaseImage(&img);
-			loaded_img_counter++;
-			
-			// debug
-			// if (loaded_img_counter >= 200) break;
-		}
-	}
+                // release resources
+                if (img) {
+                    printf("[%d]", loaded_img_counter);
+                    cvReleaseImage(&img);
+                    loaded_img_counter++;
 
-	// colorize vertices 
-	for ALL(vertices, vertex_id) 
-	{
-		Vertex * const vertex = vertices.data + vertex_id; 
+                    // debug
+                    // if (loaded_img_counter >= 200) break;
+                }
+            }
 
-		vertex->color[0] = accum_red[vertex_id] / ((float)count[vertex_id] * 255); 
-		vertex->color[1] = accum_green[vertex_id] / ((float)count[vertex_id] * 255); 
-		vertex->color[2] = accum_blue[vertex_id] / ((float)count[vertex_id] * 255); 
-	}
+        // colorize vertices
+        for
+            ALL(vertices, vertex_id)
+            {
+                Vertex* const vertex = vertices.data + vertex_id;
 
-	printf("\n");
+                vertex->color[0] = accum_red[vertex_id] / ((float)count[vertex_id] * 255);
+                vertex->color[1] = accum_green[vertex_id] / ((float)count[vertex_id] * 255);
+                vertex->color[2] = accum_blue[vertex_id] / ((float)count[vertex_id] * 255);
+            }
 
-	// release resources
-	FREE(accum_red);
-	FREE(accum_green);
-	FREE(accum_blue);
-	FREE(count);
+        printf("\n");
 
-	/*// take each vertex
+        // release resources
+        FREE(accum_red);
+        FREE(accum_green);
+        FREE(accum_blue);
+        FREE(count);
+
+        /*// take each vertex
 	for ALL(vertices, i) 
 	{
 		ASSERT_IS_SET(vertices_incidence, i); 
@@ -139,108 +142,105 @@ void tool_image_colorize()
 // deform image so that the calibrated cameras all have the same internal calibration
 void tool_image_pinhole_deform()
 {
-	if (!INDEX_IS_SET(ui_state.current_shot)) return;
+    if (!INDEX_IS_SET(ui_state.current_shot))
+        return;
 
-	// take the camera calibration of the first calibrated camera 
-	size_t first_calibrated = 0; 
-	bool found = false;
-	LAMBDA_FIND(
-		shots, 
-		first_calibrated, 
-		found, 
-		shots.data[first_calibrated].calibrated && first_calibrated == 0 /*!shots.data[first_calibrated].resected*/
-	);
-	if (!found) return;
-	const Shot * const first_shot = shots.data + first_calibrated;
+    // take the camera calibration of the first calibrated camera
+    size_t first_calibrated = 0;
+    bool found = false;
+    LAMBDA_FIND(
+        shots,
+        first_calibrated,
+        found,
+        shots.data[first_calibrated].calibrated && first_calibrated == 0 /*!shots.data[first_calibrated].resected*/
+    );
+    if (!found)
+        return;
+    const Shot* const first_shot = shots.data + first_calibrated;
 
-	opencv_begin();
+    opencv_begin();
 
-	for ALL(shots, i)
-	{
-		Shot * const shot = shots.data + i; 
+        for
+            ALL(shots, i)
+            {
+                Shot* const shot = shots.data + i;
 
-		// we only care about calibrated cameras
-		if (shot->calibrated && /*shot->resected // note temporary */ i > 0) 
-		{
-			// compute homography 
-			CvMat * H = cvCreateMat(3, 3, CV_64F), * K_inv = cvCreateMat(3, 3, CV_64F);
-			cvInvert(shot->internal_calibration, K_inv);
-			cvMatMul(first_shot->internal_calibration, K_inv, H);
+                // we only care about calibrated cameras
+                if (shot->calibrated && /*shot->resected // note temporary */ i > 0) {
+                    // compute homography
+                    CvMat *H = cvCreateMat(3, 3, CV_64F), *K_inv = cvCreateMat(3, 3, CV_64F);
+                    cvInvert(shot->internal_calibration, K_inv);
+                    cvMatMul(first_shot->internal_calibration, K_inv, H);
 
-			CvMat * A = cvCreateMat(3, 3, CV_64F);
-			cvMatMul(H, shot->internal_calibration, A); 
+                    CvMat* A = cvCreateMat(3, 3, CV_64F);
+                    cvMatMul(H, shot->internal_calibration, A);
 
-			// replace this K with the one from first shot 
-			cvCopy(first_shot->internal_calibration, shot->internal_calibration);
-			shot->fovx = first_shot->fovx; 
-			shot->film_back = first_shot->film_back; 
-			shot->pp_x = first_shot->pp_x;
-			shot->pp_y = first_shot->pp_y;
-			shot->f = first_shot->f;
-			opencv_end(); 
-			geometry_calibration_from_decomposed_matrices(i);
-			opencv_begin();
+                    // replace this K with the one from first shot
+                    cvCopy(first_shot->internal_calibration, shot->internal_calibration);
+                    shot->fovx = first_shot->fovx;
+                    shot->film_back = first_shot->film_back;
+                    shot->pp_x = first_shot->pp_x;
+                    shot->pp_y = first_shot->pp_y;
+                    shot->f = first_shot->f;
+                    opencv_end();
+                    geometry_calibration_from_decomposed_matrices(i);
+                    opencv_begin();
 
-			// perform the deformation 
-			IplImage * full_image = NULL;
-			int cnter = 0; 
-			while (!full_image) 
-			{
-				full_image = cvLoadImage(shot->image_filename); 
-				cnter++;
-				if (cnter > 10) break;
-			}
+                    // perform the deformation
+                    IplImage* full_image = NULL;
+                    int cnter = 0;
+                    while (!full_image) {
+                        full_image = cvLoadImage(shot->image_filename);
+                        cnter++;
+                        if (cnter > 10)
+                            break;
+                    }
 
-			if (cnter < 10) 
-			{
-				IplImage * deformed = cvCreateImage(cvSize(full_image->width, full_image->height), full_image->depth, full_image->nChannels);
-				for (int y = 0; y < deformed->height; y++) 
-				{
-					for (int x = 0; x < deformed->width; x++) 
-					{
-						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3]   = 0;
-						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+1] = 255;
-						((uchar*)(deformed->imageData + deformed->widthStep*y))[x*3+2] = 0;
-					}
-				}
-				cvWarpPerspective(full_image, deformed, H);
-				printf("deforming %s ... ", shot->image_filename);
+                    if (cnter < 10) {
+                        IplImage* deformed = cvCreateImage(cvSize(full_image->width, full_image->height), full_image->depth, full_image->nChannels);
+                        for (int y = 0; y < deformed->height; y++) {
+                            for (int x = 0; x < deformed->width; x++) {
+                                ((uchar*)(deformed->imageData + deformed->widthStep * y))[x * 3] = 0;
+                                ((uchar*)(deformed->imageData + deformed->widthStep * y))[x * 3 + 1] = 255;
+                                ((uchar*)(deformed->imageData + deformed->widthStep * y))[x * 3 + 2] = 0;
+                            }
+                        }
+                        cvWarpPerspective(full_image, deformed, H);
+                        printf("deforming %s ... ", shot->image_filename);
 
-				cvSaveImage(shot->image_filename, deformed);
-				printf("done\n");
+                        cvSaveImage(shot->image_filename, deformed);
+                        printf("done\n");
 
-				std::ofstream H_out((std::string(shot->image_filename) + ".H.txt").c_str());
-				for (int i = 0; i < 3; i++) 
-				{
-					for (int j = 0; j < 3; j++) 
-					{
-						H_out << OPENCV_ELEM(H, i, j) << " "; 
-					}
-					H_out << std::endl;
-				}
-				H_out.close(); 
-				
-				// update internal calibration matrix 
-				cvCopy(first_shot->internal_calibration, shot->internal_calibration);
+                        std::ofstream H_out((std::string(shot->image_filename) + ".H.txt").c_str());
+                        for (int i = 0; i < 3; i++) {
+                            for (int j = 0; j < 3; j++) {
+                                H_out << OPENCV_ELEM(H, i, j) << " ";
+                            }
+                            H_out << std::endl;
+                        }
+                        H_out.close();
 
-				cvReleaseImage(&deformed);
-			}
-			
-			// release data 
-			cvReleaseMat(&H);
-			cvReleaseMat(&K_inv);
-			cvReleaseImage(&full_image); 
-		}
-	}
+                        // update internal calibration matrix
+                        cvCopy(first_shot->internal_calibration, shot->internal_calibration);
 
-	opencv_end();
+                        cvReleaseImage(&deformed);
+                    }
+
+                    // release data
+                    cvReleaseMat(&H);
+                    cvReleaseMat(&K_inv);
+                    cvReleaseImage(&full_image);
+                }
+            }
+
+        opencv_end();
 }
 
-// register tool 
-void tool_image_create() 
+// register tool
+void tool_image_create()
 {
-	tool_create(UI_MODE_UNSPECIFIED, "Resection", "Estimate cameras using correspondence between reconstructred 3d vertices and their projection");
-	tool_register_menu_function("Main menu|Image|Colorize vertices|", tool_image_colorize);
-	tool_register_menu_function("Main menu|Image|Generate textures|", tool_image_generate_textures);
-	// tool_register_menu_function("Main menu|Image|Pinhole correction|", tool_image_pinhole_deform);
+    tool_create(UI_MODE_UNSPECIFIED, "Resection", "Estimate cameras using correspondence between reconstructred 3d vertices and their projection");
+    tool_register_menu_function("Main menu|Image|Colorize vertices|", tool_image_colorize);
+    tool_register_menu_function("Main menu|Image|Generate textures|", tool_image_generate_textures);
+    // tool_register_menu_function("Main menu|Image|Pinhole correction|", tool_image_pinhole_deform);
 }

@@ -24,23 +24,21 @@
 
 #include "ui_shot_mode.h"
 
-// mode switching 
-void ui_switch_to_shot_mode() 
+// mode switching
+void ui_switch_to_shot_mode()
 {
-	// if current shot isn't set, we'll pick the first one
-	// todo switch to the nearest camera (or better to a camera with a similar view, seeing similar set of features, etc)
-	if (!INDEX_IS_SET(ui_state.current_shot))
-	{
-		const size_t first_shot = dyn_first(shots); 
-		
-		if (dyn_found(first_shot))
-		{
-			INDEX_SET(ui_state.current_shot, first_shot);
-		}
-	}
+    // if current shot isn't set, we'll pick the first one
+    // todo switch to the nearest camera (or better to a camera with a similar view, seeing similar set of features, etc)
+    if (!INDEX_IS_SET(ui_state.current_shot)) {
+        const size_t first_shot = dyn_first(shots);
 
-	// finally change the mode 
-	ui_state.mode = UI_MODE_SHOT;
+        if (dyn_found(first_shot)) {
+            INDEX_SET(ui_state.current_shot, first_shot);
+        }
+    }
+
+    // finally change the mode
+    ui_state.mode = UI_MODE_SHOT;
 }
 
 // process mouse click events in shot mode
@@ -51,81 +49,79 @@ void ui_shot_mouse_click()
 // respond to selection box in shot mode
 void ui_shot_mouse_selection()
 {
-	// if no shot is currently displayed, we don't have anything to do 
-	if (!validate_shot(ui_state.current_shot)) return;
+    // if no shot is currently displayed, we don't have anything to do
+    if (!validate_shot(ui_state.current_shot))
+        return;
 
-	// obtain coordinates
-	double x1, y1, x2, y2;
-	x1 = ui_state.mouse_down_x; 
-	y1 = ui_state.mouse_down_y;
-	x2 = ui_state.mouse_x; 
-	y2 = ui_state.mouse_y; 
-	if (x1 > x2) swap_double(x1, x2); 
-	if (y1 > y2) swap_double(y1, y2); 
+    // obtain coordinates
+    double x1, y1, x2, y2;
+    x1 = ui_state.mouse_down_x;
+    y1 = ui_state.mouse_down_y;
+    x2 = ui_state.mouse_x;
+    y2 = ui_state.mouse_y;
+    if (x1 > x2)
+        swap_double(x1, x2);
+    if (y1 > y2)
+        swap_double(y1, y2);
 
-	// selection box modifiers 
-	Selection_Type operation = SELECTION_TYPE_REPLACEMENT; 
+    // selection box modifiers
+    Selection_Type operation = SELECTION_TYPE_REPLACEMENT;
 
-	if (ui_state.keys[SDL_SCANCODE_LSHIFT] || ui_state.keys[SDL_SCANCODE_RSHIFT]) 
-	{
-		operation = SELECTION_TYPE_UNION;
-	}
-	else if (ui_state.keys[SDLK_LCTRL] || ui_state.keys[SDLK_RCTRL]) 
-	{
-		operation = SELECTION_TYPE_INTERSECTION;
-	}
+    if (ui_state.keys[SDL_SCANCODE_LSHIFT] || ui_state.keys[SDL_SCANCODE_RSHIFT]) {
+        operation = SELECTION_TYPE_UNION;
+    } else if (ui_state.keys[SDLK_LCTRL] || ui_state.keys[SDLK_RCTRL]) {
+        operation = SELECTION_TYPE_INTERSECTION;
+    }
 
-	// empty selection list 
-	if (operation == SELECTION_TYPE_REPLACEMENT)
-	{
-		ui_empty_selection_list(); 
-	}
+    // empty selection list
+    if (operation == SELECTION_TYPE_REPLACEMENT) {
+        ui_empty_selection_list();
+    }
 
-	// perform selection
-	#ifdef LANG_CORRECTION
-	ui_3d_selection_box(x1, y1, x2, y2, operation);
-	#else
-	ui_2d_selection_box(x1, y1, x2, y2, operation); 
-	#endif 
+// perform selection
+#ifdef LANG_CORRECTION
+    ui_3d_selection_box(x1, y1, x2, y2, operation);
+#else
+    ui_2d_selection_box(x1, y1, x2, y2, operation);
+#endif
 }
 
 // switch current shot (when the user works in shot mode and decides to switch to another image/camera)
 bool ui_switch_shot(size_t shot_id)
 {
-	// first check this shot actually exists 
-	if (!validate_shot(shot_id)) return false;
+    // first check this shot actually exists
+    if (!validate_shot(shot_id))
+        return false;
 
-	// switch to it
-	ui_state.current_shot = shot_id;
+    // switch to it
+    ui_state.current_shot = shot_id;
 
-	return true;
+    return true;
 }
 
-// process user input (in shot mode) 
+// process user input (in shot mode)
 void ui_update_shot(const Uint32 delta_time)
 {
-	// shift changes behavior of cursor keys (translation vs. rotation)
-	if (!ui_state.keys[SDL_SCANCODE_LSHIFT] && !ui_state.keys[SDL_SCANCODE_RSHIFT])
-	{
-		// * deleting selected points * 
-		if (ui_state.keys[SDLK_DELETE])
-		{
-			// ui_delete_selected_points();
-		}
+    // shift changes behavior of cursor keys (translation vs. rotation)
+    if (!ui_state.keys[SDL_SCANCODE_LSHIFT] && !ui_state.keys[SDL_SCANCODE_RSHIFT]) {
+        // * deleting selected points *
+        if (ui_state.keys[SDLK_DELETE]) {
+            // ui_delete_selected_points();
+        }
 
-		// * switching shots * 
+        // * switching shots *
 
-		// find the shot wanted by the user
-		// size_t shot_id = 0; 
-		// bool exists = false; 
+        // find the shot wanted by the user
+        // size_t shot_id = 0;
+        // bool exists = false;
 
-		// if it exists, switch to it
-		// if (exists) ui_switch_shot(shot_id);
-	}
+        // if it exists, switch to it
+        // if (exists) ui_switch_shot(shot_id);
+    }
 }
 
-// displays small thumbnails of areas around currently selected/created vertex 
-// note unused 
+// displays small thumbnails of areas around currently selected/created vertex
+// note unused
 /*void ui_shot_thumbs()
 {
 	// * we're going to display helpers only for the first selected point *

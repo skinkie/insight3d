@@ -25,25 +25,25 @@
 #include "windows.h"
 #endif
 
-#include "SDL.h" 
+#include "SDL.h"
 #include "SDL_opengl.h"
 
 // #include "GL/gl.h"
 // #include "GL/glu.h"
 
-// drawing options (for drawing polygons, correspodences, etc.) 
-struct Drawing_Style { 
-	float color[3], line_width, point_size, opacity;
+// drawing options (for drawing polygons, correspodences, etc.)
+struct Drawing_Style {
+    float color[3], line_width, point_size, opacity;
 };
 
-// go to 2d mode 
+// go to 2d mode
 void opengl_2d_mode(double x1, double y1, double x2, double y2);
 
 // restore saved matrices
 void opengl_end_2d_mode();
 
 // set drawing style
-void opengl_drawing_style(const Drawing_Style & style);
+void opengl_drawing_style(const Drawing_Style& style);
 
 // saves settings of some common OpenGL attributes
 void opengl_push_attribs();

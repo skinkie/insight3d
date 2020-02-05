@@ -26,9 +26,9 @@
 #define __UI_WORKFLOW
 
 #include "geometry_queries.h"
+#include "tool_core.h"
 #include "ui_state.h"
 #include "ui_visualization.h"
-#include "tool_core.h"
 
 // cancels processing of a vertex, this usually results in a new vertex being created
 void ui_workflow_no_vertex();

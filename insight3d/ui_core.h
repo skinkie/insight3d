@@ -25,59 +25,58 @@
 #ifndef __UI_CORE
 #define __UI_CORE
 
-#include "portability.h"
 #include "core_structures.h"
 #include "geometry_structures.h"
-#include "ui_state.h"
-#include "ui_events.h"
 #include "gui_style.h"
+#include "portability.h"
+#include "ui_events.h"
+#include "ui_state.h"
 
-#ifdef LINUX 
+#ifdef LINUX
 #include <gtk/gtk.h>
 #endif
 
 // ui core needs to see all tools to trigger their initialization
-#include "tool_core.h"
-#include "tool_file.h"
-#include "tool_edit.h"
-#include "tool_points.h"
-#include "tool_polygons.h" 
-#include "tool_triangulation.h"
-#include "tool_resection.h"
-#include "tool_matching.h"
 #include "tool_calibration.h"
 #include "tool_coordinates.h"
+#include "tool_core.h"
+#include "tool_edit.h"
+#include "tool_file.h"
 #include "tool_image.h"
+#include "tool_matching.h"
+#include "tool_points.h"
+#include "tool_polygons.h"
+#include "tool_resection.h"
+#include "tool_triangulation.h"
 
-// GUI items 
-enum UI_Item_Type { UI_ITEM_SHOT, UI_ITEM_VERTEX, UI_ITEM_SECTION };
+// GUI items
+enum UI_Item_Type { UI_ITEM_SHOT,
+    UI_ITEM_VERTEX,
+    UI_ITEM_SECTION };
 
-struct UI_Meta
-{
-	UI_Item_Type type;
-	size_t index;
+struct UI_Meta {
+    UI_Item_Type type;
+    size_t index;
 };
 
-struct UI_Shot_Meta 
-{
-	UI_Item_Type type; 
-	size_t index; 
-	bool selected;
+struct UI_Shot_Meta {
+    UI_Item_Type type;
+    size_t index;
+    bool selected;
 
-	// special shot properties 
-	double view_center_x, view_center_y, view_zoom;    // zooming and scrolling 
+    // special shot properties
+    double view_center_x, view_center_y, view_zoom; // zooming and scrolling
 
-	// Agar GUI properties 
-	int list_id;    // id in table displaying the list of all pictures
-}; 
+    // Agar GUI properties
+    int list_id; // id in table displaying the list of all pictures
+};
 
-struct UI_Section_Meta
-{
-	UI_Item_Type type; 
-	size_t index; 
+struct UI_Section_Meta {
+    UI_Item_Type type;
+    size_t index;
 
-	// special section properties
-	bool unfolded;
+    // special section properties
+    bool unfolded;
 };
 
 // initialize user interface
@@ -86,22 +85,22 @@ bool ui_initialize();
 // release allocated memory (called when program terminates)
 void ui_release();
 
-// create new GUI item structure 
-UI_Meta * ui_create_meta(UI_Item_Type type, size_t index);
+// create new GUI item structure
+UI_Meta* ui_create_meta(UI_Item_Type type, size_t index);
 
 // create new GUI item structure for section
-UI_Section_Meta * ui_check_section_meta(UI_Section_Meta * & meta);
+UI_Section_Meta* ui_check_section_meta(UI_Section_Meta*& meta);
 
-// create new GUI item structure for shot 
-UI_Shot_Meta * ui_check_shot_meta(size_t shot_id);
+// create new GUI item structure for shot
+UI_Shot_Meta* ui_check_shot_meta(size_t shot_id);
 
 // initialize Agar GUI library
 bool ui_agar_initialization();
 
-// OpenGL settings 
+// OpenGL settings
 bool ui_opengl_initialization();
 
-// create dialogs for opening and saving files 
+// create dialogs for opening and saving files
 bool ui_create_file_dialogs();
 
 // create additional dialogs
@@ -113,32 +112,32 @@ bool ui_create_main_window();
 // create main application menu
 bool ui_create_menu();
 
-// create tools 
+// create tools
 bool ui_register_tools();
 
-// finalize GUI creation 
+// finalize GUI creation
 bool ui_done();
 
-// create gui structures and initialize 
+// create gui structures and initialize
 bool ui_create();
 
-// get viewport width and height in shot pixels 
+// get viewport width and height in shot pixels
 // void ui_get_viewport_width_in_shot_coordinates(double & width, double & height);
 
-// converts screen coordinates to shot coordinate; if no shot is displayed, 
-// convert to percentages of screen (aka virtual shot) 
-void ui_convert_xy_from_screen_to_shot(Uint16 screen_x, Uint16 screen_y, double & x, double & y);
+// converts screen coordinates to shot coordinate; if no shot is displayed,
+// convert to percentages of screen (aka virtual shot)
+void ui_convert_xy_from_screen_to_shot(Uint16 screen_x, Uint16 screen_y, double& x, double& y);
 
 // converts shot coordinates to opengl coordinates
-void ui_convert_xy_from_shot_to_opengl(const double shot_x, const double shot_y, double & x, double & y);
+void ui_convert_xy_from_shot_to_opengl(const double shot_x, const double shot_y, double& x, double& y);
 
 // check if viewport is set
 bool ui_viewport_set(const size_t shot_id);
 
-// release dualview 
+// release dualview
 void ui_release_dualview();
 
-// clears key state 
+// clears key state
 void ui_clear_key(int key);
 
 // prepare user interface for deletition of points, vertices or polygons

@@ -27,17 +27,17 @@
 
 #include "core_math_routines.h"
 #include "geometry_textures.h"
-#include "ui_core.h"
-#include "ui_context.h"
-#include "ui_visualization.h"
-#include "ui_selection.h"
-#include "ui_workflow.h"
 #include "tool_core.h"
+#include "ui_context.h"
+#include "ui_core.h"
+#include "ui_selection.h"
+#include "ui_visualization.h"
+#include "ui_workflow.h"
 
-// selection tool handles viewing options which are read by other tools and the rest of the application 
+// selection tool handles viewing options which are read by other tools and the rest of the application
 extern bool option_show_dualview, option_thumbs_only_for_selected, option_hide_automatic;
 
-// selection tool routines 
+// selection tool routines
 void tool_selection_create();
 bool tool_selection_mouse_down(double x, double y, int button);
 void tool_selection_move(double x, double y);
@@ -53,7 +53,7 @@ void selection_option_show_dualview();
 void selection_option_thumbs_only_for_selected();
 void selection_option_show_automatic_points();
 
-// some debugging functions 
+// some debugging functions
 void debug_print_Ps();
 void debug_save_initial_solution();
 void debug_save_vertices();

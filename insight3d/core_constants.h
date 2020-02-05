@@ -28,6 +28,9 @@
 // enviroment variables and constants
 extern const double CORE_PI;
 extern const double CORE_PRECISION;
-enum Core_Axes { X, Y, Z, W };
+enum Core_Axes { X,
+    Y,
+    Z,
+    W };
 
 #endif

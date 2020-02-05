@@ -32,82 +32,80 @@
 // computes projection matrix P given 3d points X and their projections x = PX
 //
 // computation is done using direct linear transform and SVD
-// 
-// arguments: 
-// 
-//   vertices   - 3 x n or 4 x n, matrix with i-th column representing the i-th 
+//
+// arguments:
+//
+//   vertices   - 3 x n or 4 x n, matrix with i-th column representing the i-th
 //                3d vertex in homogeneous or inhomogeneous coordinates respectively
-//   projected  - 2 x n matrix with i-th column representing the 2d point 
-//                on which the i-th 3d vertex is projected 
-//   P, K, R, T - allocated containers for the resulting matrices 
-//   sample     - array of ns indices values specifying which correspondences 
-//                should be used 
+//   projected  - 2 x n matrix with i-th column representing the 2d point
+//                on which the i-th 3d vertex is projected
+//   P, K, R, T - allocated containers for the resulting matrices
+//   sample     - array of ns indices values specifying which correspondences
+//                should be used
 //   ns         - number of samples
 //
-// returned value: 
-// 
-//   true  - if P has been successfully estimated
-//   false - when it fails 
-// 
-// fails when: 
+// returned value:
 //
-//   - vertices, projected, P are not allocated 
+//   true  - if P has been successfully estimated
+//   false - when it fails
+//
+// fails when:
+//
+//   - vertices, projected, P are not allocated
 //   - one of K, R, T is allocated, but not all of them
-//   - the problem is underdetermined 
+//   - the problem is underdetermined
 //   - the size of matrices is inconsistent
 //   - decomposition is required and the camera is infinite
 //
 bool mvg_resection_SVD(
-	const CvMat * const vertices,
-	const CvMat * const projected,
-	CvMat * const P,
-	CvMat * const K,
-	CvMat * const R,
-	CvMat * const T,
-	bool normalize_A,
-	int * samples = NULL,
-	int ns = -1
-);
+    const CvMat* const vertices,
+    const CvMat* const projected,
+    CvMat* const P,
+    CvMat* const K,
+    CvMat* const R,
+    CvMat* const T,
+    bool normalize_A,
+    int* samples = NULL,
+    int ns = -1);
 
 // robustly computes projection matrix P given 3d points X and their projections x = PX
 //
 // computation is done using RANSAC applied to mvg_resection_SVD
-// 
-// arguments: 
-// 
-//   vertices  - 3 x n matrix with i-th column representing the coordinates 
-//               of the i-th 3d vertex 
-//   projected - 2 x n matrix with i-th column representing the 2d point 
-//               on which the i-th 3d vertex is projected 
+//
+// arguments:
+//
+//   vertices  - 3 x n matrix with i-th column representing the coordinates
+//               of the i-th 3d vertex
+//   projected - 2 x n matrix with i-th column representing the 2d point
+//               on which the i-th 3d vertex is projected
 //   trials    - number of trials/iterations to do
-//   threshold - maximum value of reprojection error with which the vertex is 
+//   threshold - maximum value of reprojection error with which the vertex is
 //               still considered inlier
-//   inliers   - (optional) array of n booleans used to mark which points 
+//   inliers   - (optional) array of n booleans used to mark which points
 //               were considered to be inliers
 //
-// returned value: 
-// 
-//   3 x 4 projection matrix
-// 
-// fails when: 
+// returned value:
 //
-//   - whenever mvg_resection_SVD fails 
-//   - sufficiently large consensus set is not found 
+//   3 x 4 projection matrix
+//
+// fails when:
+//
+//   - whenever mvg_resection_SVD fails
+//   - sufficiently large consensus set is not found
 //
 bool mvg_resection_RANSAC(
-	const CvMat * const vertices, 
-	const CvMat * const projected, 
-	CvMat * const P, 
-	CvMat * const K, 
-	CvMat * const R, 
-	CvMat * const T, 
-	bool normalize_A = false,
-	const int trials = 500, 
-	const double threshold = 4.0,
-	bool * inliers = NULL
-);
+    const CvMat* const vertices,
+    const CvMat* const projected,
+    CvMat* const P,
+    CvMat* const K,
+    CvMat* const R,
+    CvMat* const T,
+    bool normalize_A = false,
+    const int trials = 500,
+    const double threshold = 4.0,
+    bool* inliers = NULL);
 
 // clamps down some values in internal calibration matrix
-bool mvg_restrict_calibration_matrix(CvMat * const K, const bool zero_skew, const bool square_pixels);
+bool mvg_restrict_calibration_matrix(CvMat* const K, const bool zero_skew, const bool square_pixels);
 
 #endif

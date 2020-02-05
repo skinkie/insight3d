@@ -30,13 +30,16 @@
 #include "ui_core.h"
 
 // selection box can perform following set operations
-enum Selection_Type { SELECTION_TYPE_REPLACEMENT, SELECTION_TYPE_UNION, SELECTION_TYPE_INTERSECTION, SELECTION_TYPE_REMOVE };
+enum Selection_Type { SELECTION_TYPE_REPLACEMENT,
+    SELECTION_TYPE_UNION,
+    SELECTION_TYPE_INTERSECTION,
+    SELECTION_TYPE_REMOVE };
 
-// check which shots user selected in GUI 
+// check which shots user selected in GUI
 void ui_get_selection();
 
 // get ids of the first n selected shots
-size_t ui_selected_shots_n(size_t * const selected, const size_t count);
+size_t ui_selected_shots_n(size_t* const selected, const size_t count);
 
 // throw all items out of selection list
 void ui_empty_selection_list();
@@ -47,38 +50,38 @@ bool ui_add_vertex_to_selection(const size_t vertex_id);
 // remove vertex from selection box
 void ui_remove_vertex_from_selection(const size_t selection_id);
 
-// add point to selection box 
+// add point to selection box
 bool ui_add_point_to_selection(const size_t shot_id, const size_t point_id);
 
-// remove point from selection 
+// remove point from selection
 void ui_remove_point_from_selection(const size_t selection_id);
 
-// select all points on shot 
+// select all points on shot
 void ui_select_points_on_shot(const size_t shot_id);
 
-// select all points (everywhere) 
+// select all points (everywhere)
 void ui_select_all_points();
 
-// select points with reconstructed vertices 
+// select points with reconstructed vertices
 void ui_select_points_with_reconstructed_vertices();
 
 // finds point on current shot under position [x,y] (if there is any)
 // uses UI_FOCUS_PIXEL_DISTANCE to determine if the point is close enough
-bool ui_selection_get_point_by_position(const double x, const double y, size_t & point_id);
+bool ui_selection_get_point_by_position(const double x, const double y, size_t& point_id);
 
-// does this vertex belong to an invisible group? 
+// does this vertex belong to an invisible group?
 bool ui_vertex_invisible(size_t vertex_id);
 
 // perform 3d selection of vertices
 void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_Type operation);
 
-// perform 2d selection of points 
+// perform 2d selection of points
 void ui_2d_selection_box(double x1, double y1, double x2, double y2, Selection_Type operation);
 
 // delete selected points (only on current shot)
 void ui_delete_selected_points(bool dont_restrict_to_current_shot = false);
 
-// show selection box 
+// show selection box
 void ui_selection_box();
 
 #endif

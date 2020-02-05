@@ -27,8 +27,8 @@
 // update the list of shots
 void ui_list_update()
 {
-	// T
-	/*AG_TableBegin(ui_state.list);
+    // T
+    /*AG_TableBegin(ui_state.list);
 
 	for ALL(shots, i) 
 	{
@@ -50,44 +50,34 @@ void ui_list_update()
 }
 
 // switch to next shot
-void ui_next_shot(GUI_Panel * panel)
+void ui_next_shot(GUI_Panel* panel)
 {
-	if (!INDEX_IS_SET(ui_state.current_shot))
-	{
-		ui_workflow_default_shot();
-	}
-	else
-	{
-		for (size_t shot_id = ui_state.current_shot + 1; shot_id < shots.count; shot_id++) 
-		{
-			if (validate_shot(shot_id))
-			{
-				ui_workflow_select_shot(shot_id);
-				return; 
-			}
-		}
-	}
+    if (!INDEX_IS_SET(ui_state.current_shot)) {
+        ui_workflow_default_shot();
+    } else {
+        for (size_t shot_id = ui_state.current_shot + 1; shot_id < shots.count; shot_id++) {
+            if (validate_shot(shot_id)) {
+                ui_workflow_select_shot(shot_id);
+                return;
+            }
+        }
+    }
 }
 
 // switch to previous shot
-void ui_prev_shot(GUI_Panel * panel)
+void ui_prev_shot(GUI_Panel* panel)
 {
-	// note remove this in release 
-	if (!INDEX_IS_SET(ui_state.current_shot))
-	{
-		ui_workflow_default_shot();
-	}
-	else
-	{
-		for (size_t shot_id = ui_state.current_shot; shot_id > 0;) 
-		{
-			shot_id--;
+    // note remove this in release
+    if (!INDEX_IS_SET(ui_state.current_shot)) {
+        ui_workflow_default_shot();
+    } else {
+        for (size_t shot_id = ui_state.current_shot; shot_id > 0;) {
+            shot_id--;
 
-			if (validate_shot(shot_id))
-			{
-				ui_workflow_select_shot(shot_id);
-				return; 
-			}
-		}
-	}
+            if (validate_shot(shot_id)) {
+                ui_workflow_select_shot(shot_id);
+                return;
+            }
+        }
+    }
 }

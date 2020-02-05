@@ -25,8 +25,8 @@
 #ifndef __TOOL_POLYGONS
 #define __TOOL_POLYGONS
 
-#include "tool_typical_includes.h"
 #include "tool_points.h"
+#include "tool_typical_includes.h"
 
 void tool_polygons_create();
 void tool_polygons_key();

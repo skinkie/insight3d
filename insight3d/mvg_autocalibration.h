@@ -30,12 +30,12 @@
 #include "mvg_decomposition.h"
 
 // perform autocalibration using absolute quadric
-bool mvg_autocalibration(CvMat ** Ps, double * principal_points, const size_t n, CvMat ** Xs, const size_t m);
+bool mvg_autocalibration(CvMat** Ps, double* principal_points, const size_t n, CvMat** Xs, const size_t m);
 
 // get the coefficient in autocalibrating equations
-double q(CvMat * P, int i, int j, int c);
+double q(CvMat* P, int i, int j, int c);
 
 // perform autocalibration using absolute quadric
-bool mvg_autocalibration_2(CvMat ** Ps, double * principal_points, const size_t n, CvMat ** Xs, const size_t m, CvMat ** pi_infinity = NULL, bool affine = false);
+bool mvg_autocalibration_2(CvMat** Ps, double* principal_points, const size_t n, CvMat** Xs, const size_t m, CvMat** pi_infinity = NULL, bool affine = false);
 
 #endif

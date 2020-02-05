@@ -39,13 +39,14 @@ const int
 	MVG_MIN_INLIERS_TO_TRIANGULATE_WEAKER = 4   // when there are no outliers in the dataset
 ;*/
 
-// image measurement 
+// image measurement
 const double MVG_MEASUREMENT_THRESHOLD = 10.0;
 
 // vertices
-const int 
-	MVG_MIN_INLIERS_TO_TRIANGULATE = 2,
-	MVG_MIN_INLIERS_TO_TRIANGULATE_WEAKER = 2   // when there are no outliers in the dataset
-;
+const int
+    MVG_MIN_INLIERS_TO_TRIANGULATE
+    = 2,
+    MVG_MIN_INLIERS_TO_TRIANGULATE_WEAKER = 2 // when there are no outliers in the dataset
+    ;
 
 #endif

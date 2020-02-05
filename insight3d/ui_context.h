@@ -29,48 +29,48 @@
 #include "ui_core.h"
 #include "ui_visualization_helpers.h"
 
-// decoration style 
-enum Context_Content { UI_CONTEXT_THUMBNAIL, UI_CONTEXT_ZOOM };
-enum Context_Decoration { UI_CONTEXT_NONE, UI_CONTEXT_CROSSHAIR };
+// decoration style
+enum Context_Content { UI_CONTEXT_THUMBNAIL,
+    UI_CONTEXT_ZOOM };
+enum Context_Decoration { UI_CONTEXT_NONE,
+    UI_CONTEXT_CROSSHAIR };
 
-// setting 
+// setting
 extern const double UI_CONTEXT_SCALE;
 
 // context popup items
-struct Context_Item
-{
-	bool set;
+struct Context_Item {
+    bool set;
 
-	// content type
-	Context_Content content;
+    // content type
+    Context_Content content;
 
-	// image and position shown
-	size_t shot_id;
-	double x, y, width, height;
+    // image and position shown
+    size_t shot_id;
+    double x, y, width, height;
 
-	// decoration 
-	Context_Decoration decoration;
+    // decoration
+    Context_Decoration decoration;
 
-	// request for this image sent to loading subsystem
-	Image_Loader_Request_Handle request;
+    // request for this image sent to loading subsystem
+    Image_Loader_Request_Handle request;
 };
 
 DYNAMIC_STRUCTURE_DECLARATIONS(Context_Items, Context_Item);
 
 // provides info about context popup
-struct Context_State 
-{
-	// popup state 
-	bool visible; 
-	double x, y; // where is the context menu shown 
-	bool positive_x, positive_y; // direction in which the window is shown 
+struct Context_State {
+    // popup state
+    bool visible;
+    double x, y; // where is the context menu shown
+    bool positive_x, positive_y; // direction in which the window is shown
 
-	// settings 
-	double delay, timer;
+    // settings
+    double delay, timer;
 
-	// popup content
-	size_t count;
-	Context_Items items;
+    // popup content
+    size_t count;
+    Context_Items items;
 };
 
 extern const size_t UI_CONTEXT_MAX_SHOWN_ITEMS;

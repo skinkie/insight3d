@@ -4,221 +4,221 @@
 // #include <stdbool.h> // todo
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include <math.h>
 #include <opencv2/core/core_c.h>
 #include <opencv2/highgui/highgui_c.h>
-#include <math.h>
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)-1)
 #endif
-#define OPENCV_PIXEL(img, x, y, ch) ((uchar*)(img->imageData + img->widthStep*(y)))[(x)*3 + (ch)] 
+#define OPENCV_PIXEL(img, x, y, ch) ((uchar*)(img->imageData + img->widthStep * (y)))[(x)*3 + (ch)]
 
-// settings 
+// settings
 #define GUI_MAX_PANELS 4192
 
-// forward declarations 
+// forward declarations
 struct GUI_Panel;
 
-// enums 
-enum GUI_Menu_Type { GUI_MAIN_MENU_CONTAINER, GUI_MAIN_MENU_ITEM, GUI_MENU_ITEM };
+// enums
+enum GUI_Menu_Type { GUI_MAIN_MENU_CONTAINER,
+    GUI_MAIN_MENU_ITEM,
+    GUI_MENU_ITEM };
 
 // callbacks
-typedef void (*GUI_Positioner)(GUI_Panel * panel);
-typedef void (*GUI_Event)(GUI_Panel * panel);
-typedef void (*GUI_Render)(GUI_Panel * panel);
+typedef void (*GUI_Positioner)(GUI_Panel* panel);
+typedef void (*GUI_Event)(GUI_Panel* panel);
+typedef void (*GUI_Render)(GUI_Panel* panel);
 typedef void (*GUI_GLView_Render)();
 
 // the entire GUI is constructed from simple rectangular elements called panels
-struct GUI_Panel
-{
-	// debug identifier
-	const char * debugging_title;
+struct GUI_Panel {
+    // debug identifier
+    const char* debugging_title;
 
-	// parent and sibling can be used to calculate panel's position and size
-	GUI_Panel * parent, * sibling;
+    // parent and sibling can be used to calculate panel's position and size
+    GUI_Panel *parent, *sibling;
 
-	// function used to calculate the position and size
-	GUI_Positioner positioner;
+    // function used to calculate the position and size
+    GUI_Positioner positioner;
 
-	// parameters used by positioner
-	int width, height;
+    // parameters used by positioner
+    int width, height;
 
-	// properties
-	bool 
-		hidden, // panel is hidden 
-		effectively_hidden // panel is hasn't been displayed in last rendering either because 
-		                   // it is hidden or because it's parent is effectively hidden
-	;
+    // properties
+    bool
+        hidden, // panel is hidden
+        effectively_hidden // panel is hasn't been displayed in last rendering either because
+        // it is hidden or because it's parent is effectively hidden
+        ;
 
-	// states
-	bool focus, disabled;
+    // states
+    bool focus, disabled;
 
-	// events
-	GUI_Event 
-		on_focus, on_unfocus, on_mousemove, on_mousedown, on_mousedownout, 
-		on_mouseup, on_menuitemaction, on_buttonaction;
+    // events
+    GUI_Event
+        on_focus,
+        on_unfocus, on_mousemove, on_mousedown, on_mousedownout,
+        on_mouseup, on_menuitemaction, on_buttonaction;
 
-	// computed coordinates - the region taken by the panel
-	int x1, y1, x2, y2;
+    // computed coordinates - the region taken by the panel
+    int x1, y1, x2, y2;
 
-	// computed coordinates - after taking account for the margins
-	int effective_x1, effective_y1, effective_x2, effective_y2;
+    // computed coordinates - after taking account for the margins
+    int effective_x1, effective_y1, effective_x2, effective_y2;
 
-	// margins 
-	int margin_top, margin_bottom, margin_left, margin_right;
+    // margins
+    int margin_top, margin_bottom, margin_left, margin_right;
 
-	// rendering function
-	GUI_Render on_render;
+    // rendering function
+    GUI_Render on_render;
 
-	// data controlled by the UI element 
-	int i; 
-	double d; 
-	void * p;
+    // data controlled by the UI element
+    int i;
+    double d;
+    void* p;
 
-	/* Specific purposes */
+    /* Specific purposes */
 
-	// rendered text 
-	const char * caption; 
-	IplImage * caption_image;
-	int caption_width, caption_height;
-	GLuint caption_texture_id; 
+    // rendered text
+    const char* caption;
+    IplImage* caption_image;
+    int caption_width, caption_height;
+    GLuint caption_texture_id;
 
-	// todo use cases on the following
+    // todo use cases on the following
 
-	// menu
-	GUI_Menu_Type menu_type;
-	GUI_Panel * menu_first_child, * menu_sibling, * menu_parent;
+    // menu
+    GUI_Menu_Type menu_type;
+    GUI_Panel *menu_first_child, *menu_sibling, *menu_parent;
 
-	// tab
-	GUI_Panel * tab_complement, * tab_sibling, * tab_container;
+    // tab
+    GUI_Panel *tab_complement, *tab_sibling, *tab_container;
 
-	// radio button 
-	GUI_Panel * radio_next, * radio_parent;
+    // radio button
+    GUI_Panel *radio_next, *radio_parent;
 
-	// glview 
-	GUI_GLView_Render glview_render;
+    // glview
+    GUI_GLView_Render glview_render;
 };
 
 typedef struct SDL_VideoInfo {
-        Uint32 hw_available :1; /**< Flag: Can you create hardware surfaces? */
-        Uint32 wm_available :1; /**< Flag: Can you talk to a window manager? */
-        Uint32 UnusedBits1  :6;
-        Uint32 UnusedBits2  :1;
-        Uint32 blit_hw      :1; /**< Flag: Accelerated blits HW --> HW */
-        Uint32 blit_hw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
-        Uint32 blit_hw_A    :1; /**< Flag: Accelerated blits with Alpha */
-        Uint32 blit_sw      :1; /**< Flag: Accelerated blits SW --> HW */
-        Uint32 blit_sw_CC   :1; /**< Flag: Accelerated blits with Colorkey */
-        Uint32 blit_sw_A    :1; /**< Flag: Accelerated blits with Alpha */
-        Uint32 blit_fill    :1; /**< Flag: Accelerated color fill */
-        Uint32 UnusedBits3  :16;
-        Uint32 video_mem;       /**< The total amount of video memory (in K) */
-        SDL_PixelFormat *vfmt;  /**< Value: The format of the video surface */
-        int    current_w;       /**< Value: The current video mode width */
-        int    current_h;       /**< Value: The current video mode height */
+    Uint32 hw_available : 1; /**< Flag: Can you create hardware surfaces? */
+    Uint32 wm_available : 1; /**< Flag: Can you talk to a window manager? */
+    Uint32 UnusedBits1 : 6;
+    Uint32 UnusedBits2 : 1;
+    Uint32 blit_hw : 1; /**< Flag: Accelerated blits HW --> HW */
+    Uint32 blit_hw_CC : 1; /**< Flag: Accelerated blits with Colorkey */
+    Uint32 blit_hw_A : 1; /**< Flag: Accelerated blits with Alpha */
+    Uint32 blit_sw : 1; /**< Flag: Accelerated blits SW --> HW */
+    Uint32 blit_sw_CC : 1; /**< Flag: Accelerated blits with Colorkey */
+    Uint32 blit_sw_A : 1; /**< Flag: Accelerated blits with Alpha */
+    Uint32 blit_fill : 1; /**< Flag: Accelerated color fill */
+    Uint32 UnusedBits3 : 16;
+    Uint32 video_mem; /**< The total amount of video memory (in K) */
+    SDL_PixelFormat* vfmt; /**< Value: The format of the video surface */
+    int current_w; /**< Value: The current video mode width */
+    int current_h; /**< Value: The current video mode height */
 } SDL_VideoInfo;
 
-// context holds information needed to draw on screen, respond to events, etc. 
-struct GUI_Context
-{
-	const SDL_VideoInfo * video_info;
-        SDL_Window * sdl_window;
-	SDL_Surface * surface;
-	int video_flags;
+// context holds information needed to draw on screen, respond to events, etc.
+struct GUI_Context {
+    const SDL_VideoInfo* video_info;
+    SDL_Window* sdl_window;
+    SDL_Surface* surface;
+    int video_flags;
 
-	int width, height;
-	double px, py; // pixel width and height
+    int width, height;
+    double px, py; // pixel width and height
 
-	GUI_Panel root_panel;
-	GUI_Panel * panels[GUI_MAX_PANELS];
-	size_t panels_count;
+    GUI_Panel root_panel;
+    GUI_Panel* panels[GUI_MAX_PANELS];
+    size_t panels_count;
 
-	SDL_Event * event;
-	bool event_cancelled;
+    SDL_Event* event;
+    bool event_cancelled;
 
-	// font support 
-	CvFont font;
+    // font support
+    CvFont font;
 };
 
 extern GUI_Context gui_context;
 
-// initialization 
+// initialization
 void gui_initialize();
 
-// helper functions 
+// helper functions
 bool gui_helper_initialize(const int width, const int height);
 bool gui_helper_initialize_sdl(int width, int height);
-bool gui_helper_initialize_opengl(); 
+bool gui_helper_initialize_opengl();
 void gui_helper_opengl_adjust_size(const int width, const int height);
 
 // settings
-void gui_set_size(const int width, const int height); 
+void gui_set_size(const int width, const int height);
 
-// define gui elements 
-GUI_Panel * gui_get_root_panel();
-GUI_Panel * gui_new_panel(GUI_Panel * parent, GUI_Panel * sibling, GUI_Positioner positioner, const char * debugging_title = NULL);
-void gui_set_width(GUI_Panel * panel, const int width);
-void gui_set_height(GUI_Panel * panel, const int height);
+// define gui elements
+GUI_Panel* gui_get_root_panel();
+GUI_Panel* gui_new_panel(GUI_Panel* parent, GUI_Panel* sibling, GUI_Positioner positioner, const char* debugging_title = NULL);
+void gui_set_width(GUI_Panel* panel, const int width);
+void gui_set_height(GUI_Panel* panel, const int height);
 
 // core functions
 void gui_calculate_coordinates();
 
 // positioners
-void gui_fill(GUI_Panel * panel);
-void gui_top_hfill(GUI_Panel * panel);
-void gui_below_left_vfill(GUI_Panel * panel);
-void gui_below_left_vfill_rest(GUI_Panel * panel);
-void gui_below(GUI_Panel * panel);
-void gui_below_hfill(GUI_Panel * panel);
-void gui_left_vfill(GUI_Panel * panel);
-void gui_on_the_right_vfill(GUI_Panel * panel);
-void gui_on_the_right(GUI_Panel * panel);
-void gui_below_fill(GUI_Panel * panel);
-void gui_below_on_the_right_fill(GUI_Panel * panel);
-void gui_no_position(GUI_Panel * panel);
+void gui_fill(GUI_Panel* panel);
+void gui_top_hfill(GUI_Panel* panel);
+void gui_below_left_vfill(GUI_Panel* panel);
+void gui_below_left_vfill_rest(GUI_Panel* panel);
+void gui_below(GUI_Panel* panel);
+void gui_below_hfill(GUI_Panel* panel);
+void gui_left_vfill(GUI_Panel* panel);
+void gui_on_the_right_vfill(GUI_Panel* panel);
+void gui_on_the_right(GUI_Panel* panel);
+void gui_below_fill(GUI_Panel* panel);
+void gui_below_on_the_right_fill(GUI_Panel* panel);
+void gui_no_position(GUI_Panel* panel);
 
-// event handling 
+// event handling
 #define GUI_EVENT_HANDLER(panel, event) panel->on_##event
 #define GUI_SET_RENDERING_STYLE(panel, style) panel->on_render = gui_style_##style
-void gui_set_style(GUI_Panel * panel, GUI_Render rendering_function);
+void gui_set_style(GUI_Panel* panel, GUI_Render rendering_function);
 void gui_cancel_event(); // currently unused
 
 // setters
-void gui_set_panel_visible(GUI_Panel * panel, bool visibility);
-void gui_set_debugging_title(GUI_Panel * panel, const char * debugging_title);
-void gui_set_top_margin(GUI_Panel * panel, const int margin); 
-void gui_set_bottom_margin(GUI_Panel * panel, const int margin); 
-void gui_set_left_margin(GUI_Panel * panel, const int margin); 
-void gui_set_right_margin(GUI_Panel * panel, const int margin); 
-void gui_set_margins(GUI_Panel * panel, const int top = 0, const int right = 0, const int bottom = 0, const int left = 0);
-void gui_set_disabled(GUI_Panel * panel, const bool value);
+void gui_set_panel_visible(GUI_Panel* panel, bool visibility);
+void gui_set_debugging_title(GUI_Panel* panel, const char* debugging_title);
+void gui_set_top_margin(GUI_Panel* panel, const int margin);
+void gui_set_bottom_margin(GUI_Panel* panel, const int margin);
+void gui_set_left_margin(GUI_Panel* panel, const int margin);
+void gui_set_right_margin(GUI_Panel* panel, const int margin);
+void gui_set_margins(GUI_Panel* panel, const int top = 0, const int right = 0, const int bottom = 0, const int left = 0);
+void gui_set_disabled(GUI_Panel* panel, const bool value);
 
 // queries
-bool gui_is_panel_visible(const GUI_Panel * panel);
-bool gui_is_panel_disabled(const GUI_Panel * panel);
+bool gui_is_panel_visible(const GUI_Panel* panel);
+bool gui_is_panel_disabled(const GUI_Panel* panel);
 
 // draw
 void gui_render();
-void gui_caption_render(GUI_Panel * panel);
-void gui_caption_discard(GUI_Panel * panel);
-void gui_caption_discard_opengl_texture(GUI_Panel * panel);
+void gui_caption_render(GUI_Panel* panel);
+void gui_caption_discard(GUI_Panel* panel);
+void gui_caption_discard_opengl_texture(GUI_Panel* panel);
 
 // respond to events
-bool gui_resolve_mousemotion(SDL_Event * event);
-bool gui_resolve_mousebuttondown(SDL_Event * event);
-bool gui_resolve_mousebuttonup(SDL_Event * event);
-bool gui_resolve_event(SDL_Event * event);
+bool gui_resolve_mousemotion(SDL_Event* event);
+bool gui_resolve_mousebuttondown(SDL_Event* event);
+bool gui_resolve_mousebuttonup(SDL_Event* event);
+bool gui_resolve_event(SDL_Event* event);
 
 /* Auxiliary functions - opengl */
 
-GLuint gui_upload_opengl_texture(IplImage * image);
+GLuint gui_upload_opengl_texture(IplImage* image);
 void gui_opengl_display_text(
-	GLuint texture_id, 
-	int texture_width, int texture_height, 
-	int width, int height, 
-	double x, double y,
-	double alpha
-);
+    GLuint texture_id,
+    int texture_width, int texture_height,
+    int width, int height,
+    double x, double y,
+    double alpha);
 void gui_opengl_vertex(double x, double y);
 
 /* Cleanup */
@@ -229,73 +229,73 @@ void gui_release();
 /* Menu */
 
 // creating menu
-void gui_make_menu(GUI_Panel * panel);
-GUI_Panel * gui_new_menu_item(GUI_Panel * parent, char * caption);
-void gui_set_menu_action(GUI_Panel * panel, GUI_Event event);
+void gui_make_menu(GUI_Panel* panel);
+GUI_Panel* gui_new_menu_item(GUI_Panel* parent, char* caption);
+void gui_set_menu_action(GUI_Panel* panel, GUI_Event event);
 
 // menu event handlers
-void gui_menu_event_mousedown(GUI_Panel * panel);
-void gui_menu_event_mousedownout(GUI_Panel * panel);
+void gui_menu_event_mousedown(GUI_Panel* panel);
+void gui_menu_event_mousedownout(GUI_Panel* panel);
 
 /* Tabs */
 
 // creating tabs
-GUI_Panel * gui_new_tabs(GUI_Panel * parent, GUI_Panel * sibling, GUI_Positioner positioner);
-GUI_Panel * gui_new_tab(GUI_Panel * tabs_container, const char * title);
-
-// mouse event handlers 
-void gui_tab_event_mousedown(GUI_Panel * panel);
-
-/* Labels */ 
-
-// creating labels 
-GUI_Panel * gui_new_label(GUI_Panel * parent, GUI_Panel * sibling, const char * caption);
-
-/* Checkbox */ 
-
-// creating checkboxes 
-GUI_Panel * gui_new_checkbox(GUI_Panel * parent, GUI_Panel * sibling, const char * caption);
-
-// getters and setters of the value represented by the checkbox 
-bool gui_get_checkbox(GUI_Panel * checkbox);
-void gui_set_checkbox(GUI_Panel * checkbox, bool value);
+GUI_Panel* gui_new_tabs(GUI_Panel* parent, GUI_Panel* sibling, GUI_Positioner positioner);
+GUI_Panel* gui_new_tab(GUI_Panel* tabs_container, const char* title);
 
 // mouse event handlers
-void gui_checkbox_event_mousedown(GUI_Panel * panel);
+void gui_tab_event_mousedown(GUI_Panel* panel);
 
-/* Radio buttons */ 
+/* Labels */
 
-// creating radio buttons 
-GUI_Panel * gui_new_radio_group(GUI_Panel * parent);
-GUI_Panel * gui_new_radio_button(GUI_Panel * parent, GUI_Panel * sibling, GUI_Panel * group, const char * caption);
+// creating labels
+GUI_Panel* gui_new_label(GUI_Panel* parent, GUI_Panel* sibling, const char* caption);
 
-// getters and setters 
-int gui_get_radio_value(GUI_Panel * radio);
-int gui_get_width(GUI_Panel * panel); 
-int gui_get_height(GUI_Panel * panel);
+/* Checkbox */
 
-// mouse event handlers 
-void gui_radio_event_mousedown(GUI_Panel * panel);
+// creating checkboxes
+GUI_Panel* gui_new_checkbox(GUI_Panel* parent, GUI_Panel* sibling, const char* caption);
 
-/* Buttons */ 
-
-// creating buttons 
-GUI_Panel * gui_new_button(GUI_Panel * parent, GUI_Panel * sibling, const char * caption, GUI_Event button_clicked);
+// getters and setters of the value represented by the checkbox
+bool gui_get_checkbox(GUI_Panel* checkbox);
+void gui_set_checkbox(GUI_Panel* checkbox, bool value);
 
 // mouse event handlers
-void gui_button_event_mousedown(GUI_Panel * panel);
+void gui_checkbox_event_mousedown(GUI_Panel* panel);
 
-/* GLView */ 
+/* Radio buttons */
+
+// creating radio buttons
+GUI_Panel* gui_new_radio_group(GUI_Panel* parent);
+GUI_Panel* gui_new_radio_button(GUI_Panel* parent, GUI_Panel* sibling, GUI_Panel* group, const char* caption);
+
+// getters and setters
+int gui_get_radio_value(GUI_Panel* radio);
+int gui_get_width(GUI_Panel* panel);
+int gui_get_height(GUI_Panel* panel);
+
+// mouse event handlers
+void gui_radio_event_mousedown(GUI_Panel* panel);
+
+/* Buttons */
+
+// creating buttons
+GUI_Panel* gui_new_button(GUI_Panel* parent, GUI_Panel* sibling, const char* caption, GUI_Event button_clicked);
+
+// mouse event handlers
+void gui_button_event_mousedown(GUI_Panel* panel);
+
+/* GLView */
 
 // transform a panel into glview
-void gui_make_glview(GUI_Panel * panel, GUI_GLView_Render render);
+void gui_make_glview(GUI_Panel* panel, GUI_GLView_Render render);
 
-// glview render event 
-void gui_glview_event_render(GUI_Panel * panel);
+// glview render event
+void gui_glview_event_render(GUI_Panel* panel);
 
 /* Separators */
 
 // creating horizontal separator
-GUI_Panel * gui_new_hseparator(GUI_Panel * parent, GUI_Panel * sibling);
+GUI_Panel* gui_new_hseparator(GUI_Panel* parent, GUI_Panel* sibling);
 
 #endif

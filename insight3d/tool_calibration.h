@@ -25,14 +25,14 @@
 #ifndef __TOOL_CALIBRATION
 #define __TOOL_CALIBRATION
 
-#include "tool_typical_includes.h"
-#include "geometry_publish.h"
 #include "geometry_export.h"
-#include "mvg_triangulation.h"
-#include "mvg_resection.h"
-#include "mvg_normalization.h"
-#include "mvg_camera.h"
+#include "geometry_publish.h"
 #include "mvg_autocalibration.h"
+#include "mvg_camera.h"
+#include "mvg_normalization.h"
+#include "mvg_resection.h"
+#include "mvg_triangulation.h"
+#include "tool_typical_includes.h"
 
 // methods
 void tool_calibration_create();
@@ -50,9 +50,9 @@ void tool_calibration_triangulate_trusted();
 void tool_calibration_debug_export();
 void tool_calibration_clear();
 void tool_calibration_bundle();
-void tool_calibration_auto(); 
+void tool_calibration_auto();
 void tool_calibration_auto_begin();
 void tool_calibration_auto_step();
-void tool_calibration_auto_end(); 
+void tool_calibration_auto_end();
 
 #endif

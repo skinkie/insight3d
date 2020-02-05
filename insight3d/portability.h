@@ -10,7 +10,6 @@
 #endif
 
 // define LINUX if we're on real operating system
-#ifndef _MSC_VER 
+#ifndef _MSC_VER
 #define LINUX
 #endif
-
