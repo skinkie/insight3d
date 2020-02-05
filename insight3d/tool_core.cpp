@@ -765,7 +765,6 @@ void tool_start_progressbar()
 void tool_end_progressbar()
 {
     // cvDestroyWindow("progressbar");
-    cvShowImage("progressbar", NULL);
     cvDestroyAllWindows();
     cvWaitKey(1);
 }
