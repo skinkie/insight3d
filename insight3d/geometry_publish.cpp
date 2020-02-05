@@ -46,7 +46,7 @@ bool publish_triangulation_data(
                 ASSERT(shots.data[shot_id].points.data[point_id].vertex == vertex_id, "inconsistent data in vertex_incidence structure");
 
                 // use only calibrated shots and skip unselected
-                if (!shots.data[shot_id].calibrated || shots_to_use && !shots_to_use[shot_id])
+                if (!shots.data[shot_id].calibrated || (shots_to_use && !shots_to_use[shot_id]))
                     continue;
 
                 // check if this point is credible
@@ -78,7 +78,7 @@ bool publish_triangulation_data(
                 ASSERT_IS_SET(shots, shot_id);
                 ASSERT_IS_SET(shots.data[shot_id].points, point_id);
                 ASSERT(shots.data[shot_id].points.data[point_id].vertex == vertex_id, "inconsistent data in vertex_incidence structure");
-                if (!shots.data[shot_id].calibrated || shots_to_use && !shots_to_use[shot_id])
+                if (!shots.data[shot_id].calibrated || (shots_to_use && !shots_to_use[shot_id]))
                     continue;
                 const Point* const point = shots.data[shot_id].points.data + point_id;
 

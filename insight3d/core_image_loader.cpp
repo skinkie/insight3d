@@ -82,7 +82,7 @@ void image_loader_free_full()
             // no photo to release found...
             // {}
             // strong todo
-            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_full_count will probably fix this right away"); // todo change this message
+            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_full_count will probably fix this right away"); // TODO: change this message
         }
     }
 }
@@ -110,7 +110,7 @@ void image_loader_free_low()
             // no photo to release found...
             // {}
             // strong todo
-            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_low_count will probably fix this right away"); // todo change this message
+            ASSERT(false, "image cache too small... this really shouldn't happen, please report this bug; on the upside, increasing image_loader_low_count will probably fix this right away"); // TODO: change this message
         }
     }
 }
@@ -125,7 +125,7 @@ void image_loader_resolve_request(const size_t request_id)
     Image_Loader_Shot* const shot = image_loader_shots.data + request->shot_id;
 
     // there must be something to do
-    if (request->quality == request->current_quality || request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION) {
+    if (request->quality == request->current_quality || (request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION)) {
         ASSERT(request->done, "request is apparently done, but not flagged as such");
         return;
     }
@@ -165,6 +165,10 @@ void image_loader_resolve_request(const size_t request_id)
             IplImage* img = NULL;
             Image_Loader_Quality achieved_quality = IMAGE_LOADER_NOT_LOADED;
             switch (request->quality) {
+            case IMAGE_LOADER_NOT_LOADED: {
+                // do nothing
+                break;
+            }
             case IMAGE_LOADER_LOW_RESOLUTION: {
                 // we can fulfill the request only if the low version is loaded
                 if (shot->low) {
@@ -248,6 +252,10 @@ void image_loader_resolve_request(const size_t request_id)
                 // save the result
                 if (cut) {
                     switch (request->quality) {
+                    case IMAGE_LOADER_NOT_LOADED: {
+                        // do nothing
+                        break;
+                    }
                     case IMAGE_LOADER_LOW_RESOLUTION: {
                         if (achieved_quality == IMAGE_LOADER_LOW_RESOLUTION) {
                             ASSERT(!request->image, "unprocessed request has allocated memory for image");
@@ -319,6 +327,10 @@ void image_loader_resolve_request(const size_t request_id)
     }
     case IMAGE_LOADER_ALL: {
         switch (request->quality) {
+        case IMAGE_LOADER_NOT_LOADED: {
+            // do nothing
+            break;
+        }
         case IMAGE_LOADER_LOW_RESOLUTION: {
             if (shot->low) {
                 request->image = shot->low;
@@ -527,7 +539,7 @@ void* image_loader_thread_function(void* arg)
                                 // if the request is for shot we've just loaded, resolve the request
                                 if (
                                     request->shot_id == best_shot
-                                    && !(request->quality == request->current_quality || request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION)) {
+                                    && !(request->quality == request->current_quality || (request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION))) {
                                     image_loader_resolve_request(i);
 
                                     /*// if we are interested in low version 
@@ -599,7 +611,7 @@ bool image_loader_initialize(const int cache_full_count, const int cache_low_cou
 }
 
 // release image loader subsystem
-// todo release also shots and requests
+// TODO: release also shots and requests
 void image_loader_release()
 {
     pthread_mutex_lock(&global_lock);
@@ -670,6 +682,10 @@ Image_Loader_Request_Handle image_loader_new_request(
     shot->filename = filename;
 
     switch (quality) {
+    case IMAGE_LOADER_NOT_LOADED: {
+        // do nothing
+        break;
+    }
     case IMAGE_LOADER_LOW_RESOLUTION: {
         shot->low_unprocessed_counter++;
         shot->low_counter++;
@@ -726,6 +742,9 @@ void image_loader_cancel_request(Image_Loader_Request_Handle* handle)
             image_loader_unprocessed_counter--;
 
             switch (request->quality) {
+            case IMAGE_LOADER_NOT_LOADED:
+                // do nothing
+                break;
             case IMAGE_LOADER_LOW_RESOLUTION:
                 ASSERT(shot->low_unprocessed_counter > 0, "number of unprocessed requests for low version is zero although one unfinished is being cancelled");
                 shot->low_unprocessed_counter--;
@@ -747,6 +766,9 @@ void image_loader_cancel_request(Image_Loader_Request_Handle* handle)
 
         // either way, decrease the number of requests
         switch (request->quality) {
+        case IMAGE_LOADER_NOT_LOADED:
+            // do nothing
+            break;
         case IMAGE_LOADER_LOW_RESOLUTION:
             shot->low_counter--;
             break;
@@ -769,6 +791,9 @@ void image_loader_cancel_request(Image_Loader_Request_Handle* handle)
             image_loader_unprocessed_counter--;
 
             switch (request->quality) {
+            case IMAGE_LOADER_NOT_LOADED:
+                // do nothing
+                break;
             case IMAGE_LOADER_LOW_RESOLUTION:
                 ASSERT(shot->low_unprocessed_counter > 0, "number of unprocessed requests for low version is zero although one unfinished is being cancelled");
                 ASSERT(shot->low_counter > 0, "number of requests for low version is zero although one unfinished is being cancelled");
@@ -900,6 +925,9 @@ bool image_loader_opengl_upload_ready_dual(
                 *full_texture = shot->full_texture;
                 result = true;
             }
+            break;
+        case IMAGE_LOADER_NOT_LOADED:
+            // do nothing
             break;
         }
 
@@ -1058,7 +1086,7 @@ void image_loader_flush_texture_ids()
         pthread_mutex_unlock(&global_lock);
 }
 
-// todo set suggested flag
+// TODO: set suggested flag
 
 // clear all suggested flags
 void image_loaded_flush_suggested()

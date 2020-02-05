@@ -207,7 +207,7 @@ void tool_matching_remove_conflicts()
 }*/
 
 // extract features
-// todo delete existing keypoints on relevant images
+// TODO: delete existing keypoints on relevant images
 void matching_extract_features(const double max_size)
 {
     // extract keypoints from all images
@@ -374,7 +374,7 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
                         printf("{");
                         fflush(stdout);
                         for (size_t keypoint = 0; keypoint < first_shot->keypoints_count; keypoint++)
-                        // for (size_t tries = 0; tries < 2000; tries++) // todo this causes overflow because the number of matches can now be greater that the number of features
+                        // for (size_t tries = 0; tries < 2000; tries++) // TODO: this causes overflow because the number of matches can now be greater that the number of features
                         {
                             // size_t keypoint = rand() % first_shot->keypoints_count;
 

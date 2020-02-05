@@ -464,7 +464,7 @@ void compute_vertex_normal_from_pointcloud(const size_t vertex_id, ANNkd_tree* a
         FREE(plane);
 
         // get first camera observing this point
-        // todo we should consider all shots and take the majority
+        // TODO: we should consider all shots and take the majority
         const Vertex_Incidence* incidence = vertices_incidence.data + vertex_id;
                 for
                     ALL(incidence->shot_point_ids, i)
@@ -477,7 +477,7 @@ void compute_vertex_normal_from_pointcloud(const size_t vertex_id, ANNkd_tree* a
 
                         // decide orientation
                         // note that we're relying on that the T is precomputed, which is stupid
-                        // todo fix that (see the note above)
+                        // TODO: fix that (see the note above)
                         bool invert = dot_3(plane, shot->T) > plane[3];
 
                         if (invert) {

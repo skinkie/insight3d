@@ -71,7 +71,7 @@ bool coordinates_rotate_all_cameras(size_t shot_id)
     printf("Coordinate frame aligned with camera.\n");
 
     return coordinates_apply_homography_to_cameras(H);
-    // todo release H
+    // TODO: release H
 }
 
 // applies homography to all calibrated cameras

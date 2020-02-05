@@ -58,7 +58,7 @@ enum GEOMETRY_DATA_ORIGIN { GEOMETRY_MANUAL_INPUT,
     GEOMETRY_GENERATED = -1,
     GEOMETRY_NOT_CREDIBLE = -2,
     GEOMETRY_NOT_CHANGED = -3,
-    GEOMETRY_MANUALLY_MARKED_AS_INVISIBLE = -4 }; // todo probably change this to something better
+    GEOMETRY_MANUALLY_MARKED_AS_INVISIBLE = -4 }; // TODO: probably change this to something better
 enum GEOMETRY_VERTEX_TYPE { GEOMETRY_VERTEX_USER,
     GEOMETRY_VERTEX_AUTO,
     GEOMETRY_VERTEX_EQUIVALENCE };
@@ -72,7 +72,7 @@ enum GEOMETRY_IMAGE_INFO_STATUS {
 
 // * data structures *
 
-// dynamic set of values // todo probably rename to Value
+// dynamic set of values // TODO: probably rename to Value
 struct Index {
     bool set;
     size_t value;
@@ -117,7 +117,7 @@ struct Vertex {
     float color[3]; // vertex can be colored by user or by any algorithm to help distinguish between different groups of vertices
     size_t group; // vertex can be a part of group
     GEOMETRY_VERTEX_TYPE vertex_type; // vertex type
-    bool selected; // denotes if this vertex is selected // todo move int UI item meta structure
+    bool selected; // denotes if this vertex is selected // TODO: move int UI item meta structure
 };
 
 // stores from which shot each vertex is visible (and it's point id on this shot)

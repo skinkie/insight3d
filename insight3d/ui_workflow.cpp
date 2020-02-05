@@ -279,5 +279,5 @@ void ui_workflow_default_shot()
     // we probably want to ensure that the treeview shows
     // the list of pictures and the user can see the change
     // ui_treeview_unfold_pictures();
-    // todo remove the above comment
+    // TODO: remove the above comment
 }

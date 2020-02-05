@@ -210,7 +210,7 @@ void calibration_update_inliers(const size_t calibration_id, const size_t count,
 }
 
 // update current estimation of the set of inlying points for the whole calibration
-// todo
+// TODO
 void calibration_update_inliers(const size_t calibration_id)
 {
     ASSERT_IS_SET(calibrations, calibration_id);
@@ -223,7 +223,7 @@ void calibration_update_inliers(const size_t calibration_id)
         for
             ALL(calibration->Ps, i)
             {
-                // todo
+                // TODO
             }
 }
 
@@ -727,7 +727,7 @@ bool calibration_auto_begin(
         printf("  List of image pairs considered to start the calibration:\n");
         printf("  ");
         for (size_t i = 0; i < best_count; i++) {
-            // todo this doesn't work with MSVC
+            // TODO: this doesn't work with MSVC
             printf("%zd-%zd[%zd] ", best_pairs[2 * i + 0], best_pairs[2 * i + 1], best_corr[i]);
         }
         if (best_count == 0)
@@ -804,7 +804,7 @@ bool calibration_auto_step(
         printf("Refining calibration using bundle adjustment.\n");
         calibration_bundle();
         calibration->refined = true;
-        opencv_begin(); // todo unify calibration_*'s requirement for opencv lock
+        opencv_begin(); // TODO: unify calibration_*'s requirement for opencv lock
         // calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
         opencv_end();
         printf("  Bundle adjustment done.\n");
@@ -962,7 +962,7 @@ bool calibration_auto_end(
     // final refinement
     printf("Refining calibration using bundle adjustment.\n");
     calibration_bundle();
-    opencv_begin(); // todo unify calibration_*'s requirement for opencv lock
+    opencv_begin(); // TODO: unify calibration_*'s requirement for opencv lock
     calibration_triangulate_vertices(calibration_id, distance_threshold, 2, normalize_data, normalize_A);
     opencv_end();
 
@@ -1155,7 +1155,7 @@ void tool_calibration_add_views()
 
 // internal routine used to rectify to metric/affine reconstruction using the knowledge of principal point,
 // aspect ratio and zero skew
-// todo investigate the need for opencv lock
+// TODO: investigate the need for opencv lock
 void calibration_rectify(bool affine)
 {
     // if no calibration is selected, we don't have anything to do
@@ -1754,131 +1754,6 @@ void calibration_bundle()
             }
         ASSERT(Xs_i == Xs_count, "inconsistent counters");
 
-        // * input verification *
-
-        // go through all points and print out their reprojection error (or something)
-        /*
-	{
-		size_t m = 0; 
-		double sum_err = 0;
-
-		size_t * Xs_reindex = (size_t *)malloc(sizeof(size_t) * calibration->Xs.count); 
-		{
-			size_t i, j = 0;
-			LAMBDA(calibration->Xs, i, Xs_reindex[j++] = i; ); 
-		}
-
-		size_t * Ps_reindex = (size_t *)malloc(sizeof(size_t) * calibration->Ps.count);
-		{
-			size_t i, j = 0;
-			LAMBDA(calibration->Ps, i, Ps_reindex[j++] = i; ); 
-		}
-
-		for (size_t i = 0; i < Xs_count; i++)
-		{
-			for (size_t j = 0; j < Ps_count; j++)
-			{
-				// if this value has been measured
-				if (visibility_mask[i * Ps_count + j] == 1)
-				{
-					// project vertex
-					double pw =
-						parameters[j * BA_CAMERA_PARAMETERS + 2 * 4 + 0] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 0] +
-						parameters[j * BA_CAMERA_PARAMETERS + 2 * 4 + 1] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 1] +
-						parameters[j * BA_CAMERA_PARAMETERS + 2 * 4 + 2] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 2] +
-						parameters[j * BA_CAMERA_PARAMETERS + 2 * 4 + 3] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 3]
-					;
-
-					double px = (
-						parameters[j * BA_CAMERA_PARAMETERS + 0 * 4 + 0] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 0] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 0 * 4 + 1] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 1] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 0 * 4 + 2] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 2] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 0 * 4 + 3] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 3]
-					) / pw;
-
-					double py = (
-						parameters[j * BA_CAMERA_PARAMETERS + 1 * 4 + 0] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 0] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 1 * 4 + 1] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 1] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 1 * 4 + 2] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 2] + 
-						parameters[j * BA_CAMERA_PARAMETERS + 1 * 4 + 3] * parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 3]
-					) / pw;
-
-					// calculate error 
-					const double dx = measurement[2 * m + 0] - px, dy = measurement[2 * m + 1] - py; 
-					const double d = sqrt(dx * dx + dy * dy);
-					if (d > 144) 
-					{
-						printf("=== Sumtyn fishy about a vertex with squared residual %f: ===\n", d);
-					}
-					sum_err += d * d;
-
-					{
-						// find which shot this is 
-						size_t shot_id; 
-						bool found; 
-						LAMBDA_FIND(shots, shot_id, found, shots_reindex[shot_id] == j); 
-						ASSERT(found, "shot not found");
-
-						// find which point is it (i.e., what's the measurement)
-						size_t point_id; 
-						LAMBDA_FIND(shots.data[shot_id].points, point_id, found, shots.data[shot_id].points.data[point_id].vertex == calibration->Xs.data[Xs_reindex[i]].vertex_id);
-						ASSERT(found, "point not found");
-
-						// does the measurement align with what's saved in the measurement vector? 
-						/*printf("Measured data in shots variable:\n%f\n%f\n", 
-							shots.data[shot_id].points.data[point_id].x * shots.data[shot_id].width, 
-							shots.data[shot_id].points.data[point_id].y * shots.data[shot_id].height
-						);
-
-						printf("Measured data in measurement vector:\n%f\n%f\n", 
-							measurement[2 * m + 0], 
-							measurement[2 * m + 1]
-						);* /
-
-						// is it marked as inlier? 
-						// printf((calibration->Ps.data[Ps_reindex[j]].points_meta.data[shot_id].inlier == 1) ? "inlier " : "outlier");
-						if (calibration->Ps.data[Ps_reindex[j]].points_meta.data[point_id].inlier == 0) 
-						{
-							printf("whooops, outlier in a data which should be outlier free; what gives?\n");
-						}
-
-						// then what the hell is it? 
-
-						/*opencv_debug("Initial coordinates", calibration->Xs.data[Xs_reindex[i]].X);
-						printf("Coordinates in measurement vector: \n\n%f\n%f\n%f\n%f\n", 
-							parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 0],
-							parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 1],
-							parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 2],
-							parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 3]
-						);
-						printf("End of record\n");
-						printf("\n");* /
-					}
-
-					// verify against original data
-					const double dX = OPENCV_ELEM(calibration->Xs.data[Xs_reindex[i]].X, 0, 0) - parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 0];
-					const double dY = OPENCV_ELEM(calibration->Xs.data[Xs_reindex[i]].X, 1, 0) - parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 1];
-					const double dZ = OPENCV_ELEM(calibration->Xs.data[Xs_reindex[i]].X, 2, 0) - parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 2];
-					const double dW = OPENCV_ELEM(calibration->Xs.data[Xs_reindex[i]].X, 3, 0) - parameters[Ps_count * BA_CAMERA_PARAMETERS + i * 4 + 3];
-					const double dd = dX * dX + dY * dY + dZ * dZ + dW * dW;
-					if (dd > 0.000000001)
-					{
-						printf("hmmpf %f ", dd);
-					}
-
-					// print error 
-					// printf("%f ", d);
-
-					m++;
-				}
-			}
-		}
-
-		int i;
-		printf("computed initial error %f [%f]\n", sum_err, sum_err / m);
-		scanf("%d", &i);
-	}*/
-
         // * additional settings and info *
 
         // optimization options
@@ -1953,7 +1828,7 @@ void calibration_bundle()
                 const Calibration_Camera* camera = calibration->Ps.data + i;
 
                 // go through this cameras points
-                // todo
+                // TODO
             }
 
         // * release structures *

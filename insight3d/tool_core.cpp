@@ -57,6 +57,18 @@ void tool_menu_item_pressed(GUI_Panel* event)
 
     // take a look what this menu item should do
     switch (item->action_type) {
+    case TOOL_ACTION_NONE: {
+        // do nothing
+        break;
+    }
+    case TOOL_ACTION_SHOW: {
+        // do nothing
+        break;
+    }
+    case TOOL_ACTION_FILE_DIALOG: {
+        // do nothing
+        break;
+    }
     case TOOL_ACTION_FUNCTION_CALL: {
         item->function_call();
         break;
@@ -419,7 +431,7 @@ void tool_register_enum(size_t id, const char* const title, const char* labels[]
     size_t i = 0;
     const char* label;
 
-    while (label = tools_state.tools[n].parameters.data[id].enum_labels[i++]) {
+    while ((label = tools_state.tools[n].parameters.data[id].enum_labels[i++])) {
         tools_state.tools[n].tab_last
             = gui_new_radio_button(tools_state.tools[n].tab, tools_state.tools[n].tab_last, group, label);
     }
@@ -622,17 +634,15 @@ void tool_set_end_handler(const Tool_End_Event_Handler handler)
 char* tool_choose_file()
 {
     char* filename = NULL;
-#ifdef LINUX
-    gtk_init(NULL, NULL);
-    GtkWidget* dialog = gtk_file_chooser_dialog_new(
+
+    GtkFileChooserNative* dialog = gtk_file_chooser_native_new(
         "Open File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_OPEN,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-        NULL);
+        "_Open",
+        "_Cancel");
 
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+    if (gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         char* fn = NULL;
 
         fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
@@ -641,54 +651,25 @@ char* tool_choose_file()
         memcpy(filename, fn, len + 1);
     }
 
-    gtk_widget_destroy(dialog);
-#else
-    // todo eventually replace with Vista's common item dialog
-    OPENFILENAMEA ofn;
-    char szFile[1000];
-    const HWND hwnd = GetForegroundWindow();
+    g_object_unref(dialog);
 
-    // initialize the structure
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = szFile;
-    ofn.lpstrFile[0] = '\0'; // maybe we could initialize this
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-    // display the dialog
-    if (GetOpenFileNameA(&ofn) == TRUE) {
-        filename = ALLOC(char, sizeof(szFile));
-        memcpy(filename, szFile, sizeof(szFile));
-    }
-#endif
     return filename;
 }
 
 char* tool_choose_new_file()
 {
     char* filename = NULL;
-#ifdef LINUX
-    GtkWidget* dialog;
 
-    dialog = gtk_file_chooser_dialog_new(
-        "Save File",
+    GtkFileChooserNative* dialog = gtk_file_chooser_native_new(
+        "Open File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_SAVE,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-        NULL);
+        "_Save",
+        "_Cancel");
 
     gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
 
-    // TODO
-    // if (user_edited_a_new_document)
+    // TODO: // if (user_edited_a_new_document)
     {
         gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), ".");
         gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "Untitled document");
@@ -696,7 +677,7 @@ char* tool_choose_new_file()
     // else
     //	gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), filename_for_existing_document);
 
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+    if (gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         char* fn;
 
         fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
@@ -707,34 +688,8 @@ char* tool_choose_new_file()
         g_free(fn);
     }
 
-    gtk_widget_destroy(dialog);
-#else
-    // todo eventually replace with Vista's common item dialog
-    OPENFILENAMEA ofn;
-    char szFile[1000];
-    const HWND hwnd = GetForegroundWindow();
-    HANDLE hf;
+    g_object_unref(dialog);
 
-    // initialize the structure
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = szFile;
-    ofn.lpstrFile[0] = '\0'; // maybe we could initialize this
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST;
-
-    // display the dialog
-    if (GetSaveFileNameA(&ofn) == TRUE) {
-        filename = ALLOC(char, sizeof(szFile));
-        memcpy(filename, szFile, sizeof(szFile));
-    }
-#endif
     return filename;
 }
 
@@ -753,7 +708,6 @@ void tool_start_progressbar()
 void tool_end_progressbar()
 {
     // cvDestroyWindow("progressbar");
-    cvShowImage("progressbar", NULL);
     cvDestroyAllWindows();
     cvWaitKey(1);
 }

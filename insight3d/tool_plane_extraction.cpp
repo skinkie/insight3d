@@ -146,7 +146,7 @@ double* tool_plane_extraction(Vertices& vertices, double threshold /*= 0.5*/, bo
         normalize_inhomogeneous_part(best_sample, 4);
         opencv_end();
 
-        // optionally color inliers and set their group value // todo color is mostly debug thing, remove
+        // optionally color inliers and set their group value // TODO: color is mostly debug thing, remove
         for
             ALL(vertices, i)
             {
@@ -305,7 +305,7 @@ double* tool_plane_extraction_subset(Vertices& vertices, size_t* ids, size_t cou
     normalize_inhomogeneous_part(best_sample, 4);
     opencv_end();
 
-    // optionally color inliers and set their group value // todo color is mostly debug thing, remove
+    // optionally color inliers and set their group value // TODO: color is mostly debug thing, remove
     bool* inlier = ALLOC(bool, count);
     memset(inlier, 0, sizeof(bool) * count);
     size_t inliers_count = 0;
@@ -326,7 +326,7 @@ double* tool_plane_extraction_subset(Vertices& vertices, size_t* ids, size_t cou
 
     for (size_t i = 0; i < count; i++)
         if (inlier[i]) {
-            inlier[i] = false; // clever way to avoid additional condition in the inner cycle // todo investigate how good/bad this is
+            inlier[i] = false; // clever way to avoid additional condition in the inner cycle // TODO: investigate how good/bad this is
 
             for (size_t j = 0; j < count; j++)
                 if (inlier[j]) {

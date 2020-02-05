@@ -43,7 +43,7 @@ bool debug_initialize()
 bool initialization()
 {
     // GNU GPL license notification
-    printf("insight3d 0.3.3, 2007-2010\n");
+    printf("insight3d 0.4.0, 2007-2020\n");
     //printf("licensed under GNU AGPL 3\n\n");  // dosen't fit to the haeder
 
     // note this crashes in debug on MSVC (2008 EE), for now avoid using strdup
@@ -59,7 +59,7 @@ bool initialization()
     printf("ok\n"); // if we're still alive, everything's fine
 
     // initialize the whole package
-    return core_debug_initialize() && debug_initialize() && // todo merge this with core_debug
+    return core_debug_initialize() && debug_initialize() && // TODO: merge this with core_debug
         core_initialize() && geometry_initialize() && image_loader_initialize(4, 32) && ui_initialize() && visualization_initialize() && ui_create();
 }
 
@@ -75,31 +75,26 @@ bool main_loop()
 extern "C" struct ag_objectq agTimeoutObjQ;
 bool main_loop()
 {
-    bool is_active = true;
     Uint32 timestamp1 = SDL_GetTicks(), timestamp2 = 0;
 
     while (core_state.running) {
         timestamp2 = SDL_GetTicks();
         delta_time = timestamp2 - timestamp1;
 
-        // if the window is active, do some stuff
-        if (is_active) {
-            // redraw scene
-            gui_calculate_coordinates();
-            gui_render();
+        // redraw scene
+        gui_calculate_coordinates();
+        gui_render();
 
-            // let opencv do some redrawing
-            cvWaitKey(1);
+        // let opencv do some redrawing
+        cvWaitKey(1);
 
-            // switch SDL buffers
-            SDL_GL_SwapWindow(gui_context.sdl_window);
-        }
+        SDL_RenderPresent(gui_context.renderer);
 
         SDL_Event event;
 
         // handle events in queue
         while (SDL_PollEvent(&event)) {
-            printf("event %d \n", event.type);
+            // printf("event %d \n", event.type);
             if (!gui_resolve_event(&event)) {
                 switch (event.type) {
                 case SDL_KEYDOWN: {
@@ -114,14 +109,6 @@ bool main_loop()
 
                 case SDL_WINDOWEVENT: {
                     if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                        // resize the screen
-                        /*if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
-							SDL_WINDOWPOS_UNDEFINED, event.window.data1, event.window.data2, gui_context.video_flags)))
-						{
-							fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
-							core_state.running = false;
-							break;
-						}*/
                         printf("window resized %d %d\n", event.window.data1, event.window.data2);
                         gui_helper_initialize_opengl();
                         gui_helper_opengl_adjust_size(event.window.data1, event.window.data2);

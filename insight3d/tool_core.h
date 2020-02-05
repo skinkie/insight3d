@@ -46,7 +46,7 @@ typedef bool (*Tool_Mouse_Down_Event_Handler)(double x, double y, int button);
 typedef void (*Tool_Click_Event_Handler)(double x, double y, int button);
 typedef void (*Tool_Move_Event_Handler)(double x, double y);
 typedef void (*Tool_Dragging_Event_Handler)(double x, double y, int button);
-typedef void (*Tool_Dragging_Done_Event_Handler)(double x1, double y1, double x2, double y2, int button); // todo what to do when the user moves mouse out of window - this event is not fired...
+typedef void (*Tool_Dragging_Done_Event_Handler)(double x1, double y1, double x2, double y2, int button); // TODO: what to do when the user moves mouse out of window - this event is not fired...
 typedef void (*Tool_End_Event_Handler)();
 
 // tool UI interface

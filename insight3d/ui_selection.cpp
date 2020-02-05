@@ -90,6 +90,9 @@ void ui_empty_selection_list()
 
                 // which type of item is this
                 switch (selected_item->item_type) {
+                case GEOMETRY_UNSPECIFIED:
+                    // do nothing
+                    break;
                 case GEOMETRY_POINT:
                     // mark point as not selected
                     ASSERT_IS_SET(shots, selected_item->shot_id);
@@ -100,6 +103,9 @@ void ui_empty_selection_list()
                     // mark vertex as not selected
                     ASSERT_IS_SET(vertices, selected_item->item_id);
                     vertices.data[selected_item->item_id].selected = false;
+                    break;
+                case GEOMETRY_SHOT:
+                    // do nothing
                     break;
                 }
             }
@@ -119,7 +125,7 @@ bool ui_add_vertex_to_selection(const size_t vertex_id)
     LAST(ui_state.selection_list).item_id = vertex_id;
     LAST(ui_state.selection_list).item_type = GEOMETRY_VERTEX;
     vertices.data[vertex_id].selected = true;
-    return true; // todo true only if the addition succeeded
+    return true; // TODO: true only if the addition succeeded
 }
 
 // remove vertex from selection box
@@ -155,7 +161,7 @@ bool ui_add_point_to_selection(const size_t shot_id, const size_t point_id)
     LAST(ui_state.selection_list).item_id = point_id;
     LAST(ui_state.selection_list).item_type = GEOMETRY_POINT;
     shots.data[shot_id].points.data[point_id].selected = true;
-    return true; // todo true only if the addition succeeded
+    return true; // TODO: true only if the addition succeeded
 }
 
 // remove point from selection
@@ -338,7 +344,7 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
     double unprojected[9][3];
 
     // go through all corners of selection box and reconstruct 2 points in different depth levels
-    for (char i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         gluUnProject(
             i % 2 == 0 ? x1 : x2, i / 2 % 2 == 0 ? y1 : y2, i / 4,
             visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport,
@@ -414,6 +420,9 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                                 if (vertex->selected) {
                                     ui_add_vertex_to_selection(i);
                                 }
+                            case SELECTION_TYPE_REMOVE:
+                                // do nothing
+                                break;
                             }
                         } else if (operation == SELECTION_TYPE_INTERSECTION) {
                             // finally remove the 'selected flag' when selecting subset of previous selection
@@ -503,6 +512,9 @@ void ui_2d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                                     point->selected = false; // just to keep application invariant intact
                                     ui_add_point_to_selection(ui_state.current_shot, i);
                                 }
+                            case SELECTION_TYPE_REMOVE:
+                                // do nothing
+                                break;
                             }
                         } else if (operation == SELECTION_TYPE_INTERSECTION) {
                             // finally remove the 'selected flag' when selecting subset of previous selection
@@ -510,7 +522,7 @@ void ui_2d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                         }
                     }
     }
-    /* // todo else
+    /* // TODO: else
 	{
 		// remove points inside selection box from current selection (i.e. 'remove operation')
 		for ALL_SET_ITEMS(visualization_state.selection_list, i)

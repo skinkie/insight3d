@@ -53,7 +53,7 @@ struct Core_State {
 extern Core_State core_state;
 
 // error handling macro
-// todo think about using assertions for this
+// TODO: think about using assertions for this
 #define CHECK_ERROR(condition, error_code) \
     if ((condition)) {                     \
         core_state.error = (error_code);   \

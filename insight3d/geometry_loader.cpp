@@ -287,7 +287,7 @@ void geometry_loader_SAX_start_element(geometry_loader_SAX_state* state, const x
 
             // process attributes
 
-            // todo save shots name and use it instead of it's filename
+            // TODO: save shots name and use it instead of it's filename
             if (xmlStrcmp(*attr, XML_ATTR_NAME) == 0)
                 state->current_shot->name = (char*)xmlStrdup(value); // note conversion
             // width
@@ -486,7 +486,8 @@ void geometry_loader_SAX_characters(geometry_loader_SAX_state* state, const xmlC
 {
 }
 
-// load data from realviz xml file // todo probably rename this function to reflect that it loads .rzml, .rzi files
+// load data from realviz xml file
+// TODO: probably rename this function to reflect that it loads .rzml, .rzi files
 void geometry_loader(const char* xml_filename, Shots& shots)
 {
     // initialization
@@ -544,11 +545,11 @@ bool geometry_loader_rz3(const char* xml_filename, Shots& shots)
             t + 0, t + 1, t + 2,
             R + 0, R + 1, R + 2,
             R + 3, R + 4, R + 5,
-            R + 6, R + 7, R + 8); // TODO use entry_read
+            R + 6, R + 7, R + 8); // TODO: use entry_read
 
         // save it
         printf("accessing shot %d\n", shot_id);
-        ASSERT_IS_SET(shots, shot_id);
+        ASSERT_IS_SET(shots, (unsigned long)shot_id);
         Shot* const shot = shots.data + shot_id;
         shot->T[0] = t[0];
         shot->T[1] = t[1];
@@ -580,6 +581,8 @@ bool geometry_loader_rz3(const char* xml_filename, Shots& shots)
 
     // data post processing
     geometry_process_data(shots);
+
+    return true;
 }
 
 // load 3d vertices from text file (one vertex per line: <x> <y> <z>); returns true on success // note previously we had vertex_id on the begining of the line
@@ -602,62 +605,12 @@ bool geometry_loader_vertices(const char* txt_filename, Vertices& vertices, size
             LAST(vertices).group = group;
             LAST(vertices).reconstructed = true;
         }
-        return true; // todo check bounds
+        return true; // TODO: check bounds
         // But if the file couldn't be opened, return false.
     } else {
         return false;
     }
 }
-
-// load 2d points from text file (one point per line: <picture_no> <vertex_no> <credibility> <x> <y> <...>); returns true on success
-// todo how to distinguish between this and currently used geometry_loader_points
-/*bool geometry_loader_points(const char * txt_filename, Shots & shots, Vertices & vertices, size_t group = 0)
-{
-	// open file 
-	std::ifstream input_points(txt_filename);
-
-	if (input_points)
-	{
-		// read info about all 2d points 
-		size_t shot_input_id, vertex_input_id, point_input_id; 
-		int credibility;
-		double x, y; 
-
-		while (input_points >> shot_input_id >> vertex_input_id >> point_input_id >> credibility >> x >> y) 
-		{
-			// make sure that the shot is defined 
-			ASSERT_IS_SET(shots, shot_input_id); 
-
-			// add 2d point 
-			DYN(shots.data[shot_input_id].points, point_input_id);
-			shots.data[shot_input_id].points.data[point_input_id].vertex = vertex_input_id; 
-			shots.data[shot_input_id].points.data[point_input_id].x = x; 
-			shots.data[shot_input_id].points.data[point_input_id].y = y; 
-			if (credibility != 0) 
-			{
-				shots.data[shot_input_id].points.data[point_input_id].data_origin = GEOMETRY_MANUAL_INPUT; 
-			}
-			else
-			{
-				shots.data[shot_input_id].points.data[point_input_id].data_origin = GEOMETRY_NOT_CREDIBLE;
-			}
-
-			// create vertex 
-			DYN(vertices, vertex_input_id); 
-			vertices.data[vertex_input_id].group = group;
-		}
-
-		// rebuild precomputed structures
-		geometry_build_vertices_incidence();
-	}
-	else
-	{
-		// {} 
-		return false;
-	}
-
-	return true;
-}*/
 
 // load contours
 bool geometry_loader_contours(const char* txt_filename, Shots& shots)
@@ -751,7 +704,7 @@ bool geometry_loader_points(const char* pictures_filename, const char* tracks_fi
             const size_t vertex_id = vertices_offset + track_id;
             if (t++ % 10000 == 0) {
                 // debug
-                printf("vertices: accessing %d, count %d, allocated %d\n", vertex_id, vertices.count, vertices.allocated);
+                printf("vertices: accessing %lu, count %lu, allocated %lu\n", vertex_id, vertices.count, vertices.allocated);
             }
             DYN(vertices, vertex_id);
             vertices.data[vertex_id].group = group;

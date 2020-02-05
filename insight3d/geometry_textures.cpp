@@ -70,7 +70,7 @@ void geometry_extract_texture(const size_t polygon_id)
             ALL(shots, i)
             {
                 if (count[i] == total_vertices) {
-                    // todo * check if it's not self-intersecting *
+                    // TODO: * check if it's not self-intersecting *
                     // ...
 
                     // * count the area *
@@ -129,7 +129,7 @@ void geometry_extract_texture(const size_t polygon_id)
             // calculate bounding box and texture coordinates
             double* texture_coords = ALLOC(double, 2 * total_vertices);
             size_t v = 0;
-            double min_x = 1000, min_y = 1000, max_x = -1000, max_y = -1000; // todo dirty
+            double min_x = 1000, min_y = 1000, max_x = -1000, max_y = -1000; // TODO: dirty
                 for
                     ALL(polygon->vertices, j)
                     {

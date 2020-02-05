@@ -155,7 +155,7 @@ bool mvg_resection_SVD(
 
     // find x = argmin(|Ax|) subject to |x| == 1
     CvMat *W = cvCreateMat(12, 1, CV_64F), *V_transposed = cvCreateMat(12, 12, CV_64F);
-    cvSVD(A, W, NULL, V_transposed, CV_SVD_MODIFY_A | CV_SVD_V_T); // todo check W for numerical stability
+    cvSVD(A, W, NULL, V_transposed, CV_SVD_MODIFY_A | CV_SVD_V_T); // TODO: check W for numerical stability
 
     // build projection matrix from the last row of V_transposed
     for (int i = 0; i < 12; i++) {

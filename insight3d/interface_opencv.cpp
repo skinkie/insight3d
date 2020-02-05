@@ -88,8 +88,8 @@ CvMat* opencv_create_vector(const double a[], const size_t length)
 }
 
 // x axis rotation matrix
-// todo optimize
-// todo document the fact, that these matrices are transposes of conventional mathematical rotation matrices
+// TODO: optimize
+// TODO: document the fact, that these matrices are transposes of conventional mathematical rotation matrices
 CvMat* opencv_create_rotation_matrix_x(const double angle)
 {
     CvMat* R = opencv_create_I_matrix(3);
@@ -101,7 +101,7 @@ CvMat* opencv_create_rotation_matrix_x(const double angle)
 }
 
 // y axis rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_y(const double angle)
 {
     CvMat* R = opencv_create_I_matrix(3);
@@ -113,7 +113,7 @@ CvMat* opencv_create_rotation_matrix_y(const double angle)
 }
 
 // z axis rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_z(const double angle)
 {
     CvMat* R = opencv_create_I_matrix(3);
@@ -125,10 +125,10 @@ CvMat* opencv_create_rotation_matrix_z(const double angle)
 }
 
 // euler angles to rotation matrix
-// todo optimize
+// TODO: optimize
 CvMat* opencv_create_rotation_matrix_from_euler(const double euler[], bool reverse_order)
 {
-    CvMat* Rx = opencv_create_rotation_matrix_x(-euler[0] - OPENCV_PI); // todo move the substraction
+    CvMat* Rx = opencv_create_rotation_matrix_x(-euler[0] - OPENCV_PI); // TODO: move the substraction
     CvMat* Ry = opencv_create_rotation_matrix_y(-euler[1]);
     CvMat* Rz = opencv_create_rotation_matrix_z(-euler[2]);
 
@@ -231,7 +231,7 @@ void opencv_debug(const char* title, CvMat* A)
 // downsize image
 void opencv_downsize(IplImage** img, const int max_size)
 {
-    if (max_size <= 0 || (*img)->width <= max_size && (*img)->height <= max_size) {
+    if (max_size <= 0 || ((*img)->width <= max_size && (*img)->height <= max_size)) {
         return;
     }
 
@@ -295,7 +295,7 @@ CvMat* opencv_right_null_vector(CvMat* A)
 {
     CvMat* W = opencv_create_matrix(A->cols, 1); // used to store singular values of A
     CvMat* V_transposed = opencv_create_matrix(A->cols, A->cols);
-    cvSVD(A, W, NULL, V_transposed, CV_SVD_V_T); // todo we could check W for numerical stability
+    cvSVD(A, W, NULL, V_transposed, CV_SVD_V_T); // TODO: we could check W for numerical stability
     CvMat* x = opencv_create_matrix(A->cols, 1); // result
 
     // fill in the result
@@ -409,7 +409,7 @@ bool opencv_pip(const double x, const double y, const CvMat* polygon)
 
     for (i = 0; i < polygon->cols; i++) {
         if (
-            OPENCV_ELEM(polygon, 1, i) < y && OPENCV_ELEM(polygon, 1, j) >= y || OPENCV_ELEM(polygon, 1, j) < y && OPENCV_ELEM(polygon, 1, i) >= y) {
+            (OPENCV_ELEM(polygon, 1, i) < y && OPENCV_ELEM(polygon, 1, j) >= y) || (OPENCV_ELEM(polygon, 1, j) < y && OPENCV_ELEM(polygon, 1, i) >= y)) {
             if (
                 OPENCV_ELEM(polygon, 0, i) + (y - OPENCV_ELEM(polygon, 1, i)) / (OPENCV_ELEM(polygon, 1, j) - OPENCV_ELEM(polygon, 1, i)) * (OPENCV_ELEM(polygon, 0, j) - OPENCV_ELEM(polygon, 0, i))
                 < x) {

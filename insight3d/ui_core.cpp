@@ -29,11 +29,6 @@ bool ui_initialize()
 {
     // note why aren't we memsetting the whole thing to 0s?
 
-    // if we're on linux, we use gtk for dialogs (as every sane person should do)
-#ifdef LINUX
-    // move to after SDL_Init gtk_init(NULL, NULL);
-#endif
-
     // set default application mode to "shot mode"
     ui_state.mode = UI_MODE_SHOT;
     ui_state.previous_mode = UI_MODE_INSPECTION;
@@ -50,8 +45,8 @@ bool ui_initialize()
     ui_state.mouse_down_ticks = 0;
     ui_state.mouse_down = false;
 
-    // todo options
-    // todo rewrite
+    // TODO: options
+    // TODO: rewrite
 
     // shot clear keys
     ui_state.shot_clear_keys.clear();
@@ -157,19 +152,6 @@ UI_Shot_Meta* ui_check_shot_meta(size_t shot_id)
     return (UI_Shot_Meta*)shots.data[shot_id].ui;
 }
 
-// create new GUI item structure for vertices
-/*UI_Meta * ui_check_vertex_meta(size_t vertex_id) 
-{
-	// check if this vertex already has meta structure
-	ASSERT(validate_vertex(vertex_id), "invalid vertex supplied when checking for meta structure");
-	if (!vertices.data[vertex_id].ui)
-	{
-		vertices.data[vertex_id].ui = ui_create_meta(UI_ITEM_VERTEX, vertex_id);
-	}
-
-	return (UI_Meta *)vertices.data[vertex_id].ui;
-}*/
-
 // initialize Agar GUI library
 bool ui_agar_initialization()
 {
@@ -183,27 +165,6 @@ bool ui_agar_initialization()
     gui_set_size(width, height);
 
     return true;
-
-    // T
-    // initialize
-    /*if (AG_InitCore("insight3d - opensource image based 3d modeling software", 0) == -1)
-	{
-		fprintf(stderr, "%s\n", AG_GetError());
-		core_state.error = CORE_ERROR_GUI_INITIALIZATION;
-		return false;
-	}
-
-	if (AG_InitVideo(800, 600, 32, AG_VIDEO_OPENGL_OR_SDL | AG_VIDEO_RESIZABLE) == -1) 
-	{
-		fprintf(stderr, "%s\n", AG_GetError());
-		core_state.error = CORE_ERROR_GUI_INITIALIZATION;
-		return false;
-	}
-
-	AG_SetRefreshRate(30);
-	// agColors[WINDOW_BG_COLOR] = sdl_map_rgb_vector(agVideoFmt, UI_STYLE_BACKGROUND);
-
-	return true; // ui_icons_initialize();*/
 }
 
 // OpenGL settings
@@ -269,62 +230,6 @@ bool ui_create_main_window()
     // GUI_EVENT_HANDLER(ui_state.gl, mouseup) = ui_event_agar_button_up;
     GUI_EVENT_HANDLER(ui_state.gl, unfocus) = ui_event_mouse_out;
 
-    // T
-    // create main window
-    /*AG_Window * & win = ui_state.window;
-	win = AG_WindowNew(AG_WINDOW_PLAIN);
-	AG_WindowSetPadding(win, 0, 0, 0, 0);
-	AG_WindowSetSpacing(win, 0);
-	AG_WindowSetGeometry(win, 0, 22, agView->w, agView->h - 22);
-	AG_WindowSetCaption(win, "Main window");
-	AG_WindowSetCloseAction(win, AG_WINDOW_HIDE);
-
-	// divide it into two parts
-	ui_state.pane = AG_PaneNew(win, AG_PANE_HORIZ, AG_PANE_EXPAND);
-	ui_state.div_tools = ui_state.pane->div[0];
-	ui_state.div_glview = ui_state.pane->div[1];
-
-	// divide the left part into yet another pair
-	ui_state.pane_tools = AG_PaneNew(ui_state.div_tools, AG_PANE_VERT, AG_PANE_EXPAND);
-	ui_state.div_selections = ui_state.pane_tools->div[0];
-	ui_state.div_tabs = ui_state.pane_tools->div[1];
-	ui_state.vbox_selections = AG_VBoxNew(ui_state.div_selections, AG_VBOX_VFILL | AG_VBOX_HFILL);
-	ui_state.vbox_tabs = AG_VBoxNew(ui_state.div_tabs, AG_VBOX_VFILL | AG_VBOX_HFILL | AG_VBOX_HOMOGENOUS);
-
-	// * selections *
-
-	// toolbar contains buttons which activate tools 
-	ui_state.div_toolbar = AG_VBoxNew(ui_state.vbox_selections, AG_VBOX_HFILL | AG_VBOX_HOMOGENOUS);
-
-	// list (actually a table) enables us to switch between views
-	ui_state.list = AG_TableNew(ui_state.vbox_selections, AG_TABLE_EXPAND | AG_TABLE_MULTI);
-	AG_TableAddCol(ui_state.list, "Filename", NULL, NULL);
-	AG_TableAddCol(ui_state.list, "Calib", "<***>", NULL);
-
-	// tabs contain settings for certain tools 
-	ui_state.tabs = AG_NotebookNew(ui_state.vbox_tabs, AG_NOTEBOOK_EXPAND);
-
-	// left panel 
-	// ui_treeview_initialize();
-	// ui_state.treeview = AG_TlistNewPolled(vbox, 0, ui_treeview_poll, NULL);
-	// AG_TlistSetChangedFn(ui_state.treeview, ui_treeview_changed, NULL);
-	// AG_TlistSizeHint(ui_state.treeview, "<88888 8888888>", 16);
-	
-	// right panel 
-	ui_state.glview = AG_GLViewNew(ui_state.div_glview, AG_GLVIEW_EXPAND);
-	unsigned int glview_flags = AGWIDGET(ui_state.glview)->flags;
-	// glview_flags = glview_flags & ~AG_WIDGET_FOCUSABLE;
-	glview_flags |= AG_WIDGET_UNFOCUSED_MOTION
-	AGWIDGET(ui_state.glview)->flags = glview_flags;
-	AG_GLViewDrawFn(ui_state.glview, ui_event_agar_redraw, NULL);
-	AG_GLViewMotionFn(ui_state.glview, ui_event_agar_motion, NULL); 
-	AG_GLViewButtondownFn(ui_state.glview, ui_event_agar_button_down, NULL);
-	AG_GLViewButtonupFn(ui_state.glview, ui_event_agar_button_up, NULL);
-
-	// add handles for processing unprocessed keydown events
-	AG_SetEvent(ui_state.glview, "window-keydown", ui_event_key_down, NULL);
-	AG_SetEvent(ui_state.glview, "window-keyup", ui_event_key_up, NULL);*/
-
     return true;
 }
 
@@ -337,49 +242,6 @@ bool ui_create_menu()
 
     // main menu container
     application_menu = ui_state.top;
-
-    /*
-	// submenu "edit"
-	menu_item = AG_MenuNode(application_menu->root, "Edit", NULL);
-	AG_MenuItem * submenu_item = AG_MenuAction(menu_item, "Mode", NULL, NULL, NULL);
-	AG_MenuAction(submenu_item, "Overview mode", NULL, ui_event_menu_mode_overview, NULL);
-	AG_MenuAction(submenu_item, "Inspection mode", NULL, ui_event_menu_mode_inspection, NULL);
-	AG_MenuAction(submenu_item, "Shot mode", NULL, ui_event_menu_mode_shot, NULL);
-	AG_MenuSeparator(menu_item); 
-	// AG_MenuAction(menu_item, "Select all", NULL, ui_event_menu_select_all, NULL);
-	submenu_item = AG_MenuAction(menu_item, "Select", NULL, NULL, NULL); 
-	AG_MenuAction(submenu_item, "Points on current shot", NULL, ui_event_menu_select_points_on_current_shot, NULL);
-	AG_MenuAction(submenu_item, "All points", NULL, ui_event_menu_select_all_points, NULL);
-	AG_MenuAction(submenu_item, "Points with reconstructed vertices", NULL, ui_event_menu_select_points_with_reconstructed_vertices, NULL);
-	AG_MenuAction(submenu_item, "Points sharing vertex with currently selected points", NULL, ui_event_menu_select_points_sharing_vertex, NULL);
-	AG_MenuAction(menu_item, "Deselect all", NULL, ui_event_menu_deselect_all, NULL); 
-	AG_MenuSeparator(menu_item);
-	AG_MenuAction(menu_item, "Erase selected points", NULL, ui_event_menu_erase_selected_points, NULL);
-	AG_MenuAction(menu_item, "Erase current polygon", NULL, ui_event_menu_erase_current_polygon, NULL);
-	submenu_item = AG_MenuAction(menu_item, "Erase (more)", NULL, NULL, NULL); 
-	AG_MenuAction(submenu_item, "All vertices and points", NULL, ui_event_menu_erase_all_points_and_vertices, NULL);
-	// AG_MenuSeparator(menu_item); 
-	// AG_MenuAction(submenu_item, "Erase all", NULL, ui_event_menu_erase_all, NULL);
-
-	// submenu "reconstruction"
-	/*menu_item = AG_MenuNode(application_menu->root, "Reconstruction", NULL);
-	AG_MenuAction(menu_item, "Triangulate vertices", NULL, ui_event_menu_triangulation, NULL);
-	AG_MenuAction(menu_item, "Camera resection", NULL, ui_event_menu_resection, NULL);
-	submenu_item = AG_MenuAction(menu_item, "Camera resection (more)", NULL, NULL, NULL); 
-	AG_MenuAction(submenu_item, "All uncalibrated cameras satisfying lattice test", NULL, ui_event_menu_resection_all_lattice, NULL);
-	AG_MenuAction(submenu_item, "All uncalibrated cameras with enough known points", NULL, ui_event_menu_resection_all_enough, NULL);
-	AG_MenuAction(submenu_item, "All uncalibrated cameras", NULL, ui_event_menu_resection_all_uncalibrated, NULL);
-	AG_MenuAction(submenu_item, "All cameras", NULL, ui_event_menu_resection_all, NULL);
-
-	// submenu "modelling"
-	menu_item = AG_MenuNode(application_menu->root, "Modelling", NULL); 
-	AG_MenuAction(menu_item, "Define coordinate frame", NULL, ui_event_menu_coordinate_frame, NULL);
-	AG_MenuAction(menu_item, "Find major plane", NULL, NULL, NULL);
-	AG_MenuAction(menu_item, "Deform image into pinhole camera", NULL, ui_event_menu_pinhole_deform, NULL);
-
-	// submenu "windows"
-	menu_item = AG_MenuNode(application_menu->root, "Windows", NULL);
-	AG_MenuAction(menu_item, "OpenGL layer", NULL, ui_event_menu_opengl_layer, NULL);*/
 
     return true;
 }
@@ -451,19 +313,6 @@ bool ui_create()
 {
     return ui_agar_initialization() && ui_opengl_initialization() && ui_create_file_dialogs() && ui_create_dialogs() && ui_create_main_window() && ui_create_menu() && ui_context_initialize() && ui_register_tools() && ui_done();
 }
-
-/*// get viewport width and height in shot pixels 
-// note unused and not tested
-void ui_get_viewport_width_in_shot_coordinates(double & width, double & height) 
-{
-	double x1, y1, x2, y2; 
-
-	ui_convert_xy_from_screen_to_shot(0, 0, x1, y1); 
-	ui_convert_xy_from_screen_to_shot(gui_get_width(ui_state.gl) - 1, gui_get_height(ui_state.gl) - 1, x2, y2); 
-
-	width = x2 - x1; 
-	height = y2 - y1;
-}*/
 
 // converts screen coordinates to shot coordinate; if no shot is displayed,
 // convert to percentages of screen (aka virtual shot)

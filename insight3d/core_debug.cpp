@@ -160,7 +160,7 @@ void check_all_chunks()
 void report_invalid_chunk(const size_t id, const char* situation)
 {
     printf(
-        "WHAT: chunk #%d\nWHEN: on %s\nDESC: %s, %s:%s\n",
+        "WHAT: chunk #%lu\nWHEN: on %s\nDESC: %s, %s:%s\n",
         id,
         situation,
         chunks[id].description,

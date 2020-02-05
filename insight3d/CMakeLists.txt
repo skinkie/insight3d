@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGTK_DISABLE_SINGLE_INCLUDES")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGSEAL_ENABLE")
+
+
 find_package(OpenCV 2.4 REQUIRED PATHS /usr/local/opt/opencv@2/share/OpenCV)
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -7,7 +12,9 @@ find_package(Freetype REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(BLAS REQUIRED)
-find_package(GTK2 REQUIRED)
+
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(GTK REQUIRED gtk+-3.0)
 
 find_library(ANN_LIBRARY ann)
 find_library(OPENSIFT_LIBRARY opensift/libopensift.a)
@@ -20,9 +27,13 @@ find_path(SBA_INCLUDE sba.h)
 message("ANN_LIBRARY ${ANN_LIBRARY}")
 message("OPENSIFT_LIBRARY ${OPENSIFT_LIBRARY}")
 message("SBA_LIBRARY ${SBA_LIBRARY}")
+message("GTK_LIBRARY_DIRS ${GTK_LIBRARY_DIRS}")
+message("GTK_LIBRARIES ${GTK_LIBRARIES}")
+
 message("ANN_INCLUDE ${ANN_INCLUDE}")
 message("OPENSIFT_INCLUDE ${OPENSIFT_INCLUDE}")
 message("SBA_INCLUDE ${SBA_INCLUDE}")
+message("GTK_INCLUDE_DIRS ${GTK_INCLUDE_DIRS}")
 
 include_directories(
 	${OpenCV_INCLUDE_DIRS}
@@ -32,10 +43,18 @@ include_directories(
 	${LIBXML2_INCLUDE_DIRS}
 	${LAPACK_INCLUDE_DIRS}
 	${BLAS_INCLUDE_DIRS}
-	${GTK2_INCLUDE_DIRS}
+	${GTK_INCLUDE_DIRS}
 	${ANN_INCLUDE}
 	${OPENSIFT_INCLUDE}
 	${SBA_INCLUDE}
+)
+
+link_directories(
+	${GTK3_LIBRARY_DIRS}
+)
+
+add_definitions(
+	${GTK3_CFLAGS_OTHER}
 )
 
 add_executable(Insight3D
@@ -107,7 +126,7 @@ target_link_libraries(Insight3D
 	${LIBXML2_LIBRARIES}
 	${LAPACK_LIBRARIES}
 	${BLAS_LIBRARIES}
-	${GTK2_LIBRARIES}
+	${GTK_LIBRARIES}
 	${ANN_LIBRARY}
 	${OPENSIFT_LIBRARY}
 	${SBA_LIBRARY}

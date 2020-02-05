@@ -118,7 +118,7 @@ void* image_loader_thread_function(void* arg);
 bool image_loader_initialize(const int cache_full_count, const int cache_low_count);
 
 // release image loader subsystem
-// todo release also shots and requests
+// TODO: release also shots and requests
 void image_loader_release();
 
 // creates new request to load shot image

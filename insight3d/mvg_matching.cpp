@@ -78,7 +78,7 @@ int mvg_buckets_compare(const void* p_f1, const void* p_f2)
         bucket2x = mvg_scale * f2->x / mvg_bucket_size,
         bucket2y = mvg_scale * f2->y / mvg_bucket_size;
 
-    if (bucket1y < bucket2y) // todo can this be optimized
+    if (bucket1y < bucket2y) // TODO: can this be optimized
     {
         return -1;
     } else if (bucket1y > bucket2y) {
@@ -97,20 +97,6 @@ size_t* mvg_build_buckets(MVG_FEATURE* features, const double scale, size_t coun
     mvg_bucket_size = bucket_size;
     mvg_scale = scale;
     qsort(features, count, sizeof(MVG_FEATURE), mvg_buckets_compare);
-
-    // verify that it's sorted
-    /*for (size_t i = 0; i < count; i++) 
-	{
-		MVG_FEATURE * f = features + i;
-
-		int row = f->y / bucket_size;
-		int col = f->x / bucket_size; 
-
-		printf("%d ", row * buckets_x + col);
-	}
-
-	int i;
-	// scanf("%d", &i);*/
 
     return mvg_index_buckets(features, scale, count, bucket_size, buckets_x, buckets_y);
 }
@@ -176,9 +162,9 @@ size_t mvg_guided_matching(
 
             const double distance = abs(bucket_x * OPENCV_ELEM(e, 0, 0) + bucket_y * OPENCV_ELEM(e, 1, 0) + OPENCV_ELEM(e, 2, 0));
             if (distance <= (0.5 * sqrt(2.0) * bucket_size + threshold)) {
-                // checked_buckets++; // todo
+                // checked_buckets++;
 
-                // go through all vertices in this bucket
+                // TODO: go through all vertices in this bucket
                 for (size_t k = index2[j]; k < index2[j + 1]; k++) {
                     checked_features++;
                     // is it near the epipolar line

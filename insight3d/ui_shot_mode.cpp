@@ -28,7 +28,7 @@
 void ui_switch_to_shot_mode()
 {
     // if current shot isn't set, we'll pick the first one
-    // todo switch to the nearest camera (or better to a camera with a similar view, seeing similar set of features, etc)
+    // TODO: switch to the nearest camera (or better to a camera with a similar view, seeing similar set of features, etc)
     if (!INDEX_IS_SET(ui_state.current_shot)) {
         const size_t first_shot = dyn_first(shots);
 
@@ -134,7 +134,7 @@ void ui_update_shot(const Uint32 delta_time)
 	{
 		const size_t polygon_id = ui_state.processed_polygon;
 
-		// todo obsolete code, use LAMBDA_FIND
+		// TODO: obsolete code, use LAMBDA_FIND
 		for ALL(polygons.data[polygon_id].vertices, i) 
 		{
 			const size_t polygons_vertex_id = polygons.data[polygon_id].vertices.data[i].value;

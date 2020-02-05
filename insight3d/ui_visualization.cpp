@@ -69,7 +69,7 @@ void visualization_prepare_inspection_projection(double fovx)
     glEnable(GL_DEPTH_TEST);
 }
 
-// calculate the view_zoom factor in x axis // todo write better description
+// calculate the view_zoom factor in x axis // TODO: write better description
 const double visualization_get_zoom_x()
 {
     const double
@@ -398,7 +398,7 @@ bool visualization_process_data_vertices(Vertices vertices)
 // processes data so that they can be eventually nicely displayed (will decide whether to use point cloud or cameras)
 void visualization_process_data(Vertices vertices, Shots shots)
 {
-    visualization_process_data_cameras(shots); // todo this routine must be called to calculate inhomogeneous coordinate, etc.; should be changed
+    visualization_process_data_cameras(shots); // TODO: this routine must be called to calculate inhomogeneous coordinate, etc.; should be changed
     visualization_process_data_vertices(vertices); // this routine will overwrite the normalization transformation if there's enough points
 }
 
@@ -448,7 +448,7 @@ double visualization_nearest_point(const size_t shot_id, const double x, const d
     double distance = query_nearest_point(shot_id, x, y, point_id);
 
     if (distance >= 0.0) {
-        // todo convert shot distance to screen pixels
+        // TODO: convert shot distance to screen pixels
         return sqrt(distance);
     } else {
         return distance;
@@ -923,15 +923,15 @@ void visualization_contours(const Shots& shots, const Vertices& vertices, const 
 
 // load shot image into memory
 /*void visualization_prepare_image(Shot & shot) 
-// todo should probably receive shot_id
-// todo add locking
+// TODO: should probably receive shot_id
+// TODO: add locking
 // note this is replaced by image_loader subsystem
 {
 	// check if the image is loaded
 	if (shot.image == NULL)
 	{
 		// deallocate all loaded images 
-		// todo this is not nice, do this differently; also check effectiveness 
+		// TODO: this is not nice, do this differently; also check effectiveness 
 		// note on the other hand it's nice, that we deallocate smartly (take 
 		// a look at recently visited shots, common points, ...) 
 		for ALL(shots, i) 
@@ -952,8 +952,8 @@ void visualization_contours(const Shots& shots, const Vertices& vertices, const 
 		}
 
 		// if not, load it 
-		// todo image caching 
-		// todo resize while preserving aspect ratio
+		// TODO: image caching 
+		// TODO: resize while preserving aspect ratio
 		IplImage * orig = cvLoadImage(shot.image_filename); // {}
 		shot.width = orig->width;
 		shot.height = orig->height;
@@ -1312,7 +1312,7 @@ void visualization_rect_with_shadow(double left, double top, double right, doubl
 	// mark point location
 	opengl_drawing_style(UI_STYLE_POINT);
 	glBegin(GL_POINTS);
-	glVertex3d((left + right) / 2.0, (top + bottom) / 2.0, -1); // todo breaks when displaying points near picture edge
+	glVertex3d((left + right) / 2.0, (top + bottom) / 2.0, -1); // TODO: breaks when displaying points near picture edge
 	glEnd();
 
 	// restore opengl settings

@@ -94,7 +94,7 @@ bool geometry_calibration_from_P(const size_t shot_id)
 // assemble projective matrix from rotation, translation and internal calibration matrix
 void geometry_calibration_from_decomposed_matrices(const size_t shot_id)
 {
-    // todo add checking for allocated P... we probably want to be consistent with the previous function
+    // TODO: add checking for allocated P... we probably want to be consistent with the previous function
     ASSERT(validate_shot(shot_id), "assembling projection matrix for invalid shot");
     Shot* const shot = shots.data + shot_id;
 
@@ -126,7 +126,7 @@ void geometry_calibration_from_decomposed_matrices(const size_t shot_id)
 }
 
 // lattice test
-// todo check for points out of picture
+// TODO: check for points out of picture
 bool geometry_lattice_test(const size_t shot_id)
 {
     ASSERT(validate_shot(shot_id), "invalid shot supplied for lattice test");
@@ -166,7 +166,7 @@ bool geometry_lattice_test(const size_t shot_id)
             }
         }
 
-        // todo remove
+        // TODO: remove
         printf("%d ", ok);
 
         return ok >= 6;
