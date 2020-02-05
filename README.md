@@ -1,8 +1,25 @@
 INSIGHT 3D NG, VERSION 0.3.3
-----------------------------
+============================
 
-COMPILING UNDEX LINUX
----------------------
+COMPILING ON MACOS
+------------------
+
+Compiling on macOS requires [Homebrew](https://brew.sh)
+
+```terminal
+brew install opencv@2 freetype sdl libxml2 lapack gtk+
+
+# the following three dependencies are not available in homebrew-core:
+brew tap mikkelee/mikkelee
+brew install ann opensift sba
+
+mkdir build; cd build
+cmake ..
+make
+```
+
+COMPILING ON LINUX
+------------------
 
 To compile insight3dng under Linux, you must have the following libraries: 
 
@@ -11,16 +28,12 @@ To compile insight3dng under Linux, you must have the following libraries:
 	- SDL
 	- libxml2 (to parse xml files)
 	- lapack 
-    - blas (min. 1.2-8 (Debian/Ubuntu))
+	- blas (min. 1.2-8 (Debian/Ubuntu))
 	- libgtk+-2.0
 
-And this should be pretty much everything. Also, pkg-config should know about those libraries. 
-
-Makefile and source code is in the "insight3d" subdirectory. There's no configuration, just execute "make" in the "insight3d" subdirectory. 
+Compilation is done via `cmake`.
 
 COMPILING ON WINDOWS
 --------------------
 
-You'll need the same libraries. You'll need to setup the paths to include 
-and bin directories of these libraries in Visual Studio. The project has been
-compiled using Microsoft Visual C++ Express 2008.
+You'll need the same libraries. MSVC files can be generated via `cmake`.
