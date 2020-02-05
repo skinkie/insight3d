@@ -609,56 +609,6 @@ bool geometry_loader_vertices(const char* txt_filename, Vertices& vertices, size
     }
 }
 
-// load 2d points from text file (one point per line: <picture_no> <vertex_no> <credibility> <x> <y> <...>); returns true on success
-// todo how to distinguish between this and currently used geometry_loader_points
-/*bool geometry_loader_points(const char * txt_filename, Shots & shots, Vertices & vertices, size_t group = 0)
-{
-	// open file 
-	std::ifstream input_points(txt_filename);
-
-	if (input_points)
-	{
-		// read info about all 2d points 
-		size_t shot_input_id, vertex_input_id, point_input_id; 
-		int credibility;
-		double x, y; 
-
-		while (input_points >> shot_input_id >> vertex_input_id >> point_input_id >> credibility >> x >> y) 
-		{
-			// make sure that the shot is defined 
-			ASSERT_IS_SET(shots, shot_input_id); 
-
-			// add 2d point 
-			DYN(shots.data[shot_input_id].points, point_input_id);
-			shots.data[shot_input_id].points.data[point_input_id].vertex = vertex_input_id; 
-			shots.data[shot_input_id].points.data[point_input_id].x = x; 
-			shots.data[shot_input_id].points.data[point_input_id].y = y; 
-			if (credibility != 0) 
-			{
-				shots.data[shot_input_id].points.data[point_input_id].data_origin = GEOMETRY_MANUAL_INPUT; 
-			}
-			else
-			{
-				shots.data[shot_input_id].points.data[point_input_id].data_origin = GEOMETRY_NOT_CREDIBLE;
-			}
-
-			// create vertex 
-			DYN(vertices, vertex_input_id); 
-			vertices.data[vertex_input_id].group = group;
-		}
-
-		// rebuild precomputed structures
-		geometry_build_vertices_incidence();
-	}
-	else
-	{
-		// {} 
-		return false;
-	}
-
-	return true;
-}*/
-
 // load contours
 bool geometry_loader_contours(const char* txt_filename, Shots& shots)
 {

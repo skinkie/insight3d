@@ -98,20 +98,6 @@ size_t* mvg_build_buckets(MVG_FEATURE* features, const double scale, size_t coun
     mvg_scale = scale;
     qsort(features, count, sizeof(MVG_FEATURE), mvg_buckets_compare);
 
-    // verify that it's sorted
-    /*for (size_t i = 0; i < count; i++) 
-	{
-		MVG_FEATURE * f = features + i;
-
-		int row = f->y / bucket_size;
-		int col = f->x / bucket_size; 
-
-		printf("%d ", row * buckets_x + col);
-	}
-
-	int i;
-	// scanf("%d", &i);*/
-
     return mvg_index_buckets(features, scale, count, bucket_size, buckets_x, buckets_y);
 }
 

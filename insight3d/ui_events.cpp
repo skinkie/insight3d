@@ -440,33 +440,6 @@ void ui_event_agar_button_up()
 // process user input
 void ui_event_update(const Uint32 delta_time)
 {
-    // note obsolete code
-    // negative time
-    /*if (delta_time <= 0) return; // todo possibly report this - also report when framerate is less then 4 fps
-
-	// act in different application modes accordingly
-	switch (ui_state.mode)
-	{
-		case UI_MODE_OVERVIEW: break;
-		case UI_MODE_INSPECTION: ui_update_inspection(delta_time); break; 
-		case UI_MODE_SHOT: ui_update_shot(delta_time); break; 
-		case UI_MODE_CALCULATION: break; 
-		default: ASSERT(false, "unknown ui mode");
-	}
-
-	// handle global events (exiting application, saving, ...) 
-	ui_update_global(delta_time);
-
-	// clear keyboard state 
-	switch (ui_state.mode)
-	{
-		case UI_MODE_OVERVIEW: sdl_clear_keys(ui_state.keys, ui_state.overview_clear_keys, ui_state.keys_length); break;
-		case UI_MODE_INSPECTION: sdl_clear_keys(ui_state.keys, ui_state.inspection_clear_keys, ui_state.keys_length); break; 
-		case UI_MODE_SHOT: sdl_clear_keys(ui_state.keys, ui_state.shot_clear_keys, ui_state.keys_length); break; 
-		case UI_MODE_CALCULATION: break; // todo 
-		default: ASSERT(false, "unknown ui mode");
-	}*/
-
     // also call update routines
     switch (ui_state.mode) {
     case UI_MODE_SHOT:
