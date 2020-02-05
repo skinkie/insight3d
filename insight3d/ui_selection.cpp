@@ -344,7 +344,7 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
     double unprojected[9][3];
 
     // go through all corners of selection box and reconstruct 2 points in different depth levels
-    for (char i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         gluUnProject(
             i % 2 == 0 ? x1 : x2, i / 2 % 2 == 0 ? y1 : y2, i / 4,
             visualization_state.opengl_modelview, visualization_state.opengl_projection, visualization_state.opengl_viewport,
