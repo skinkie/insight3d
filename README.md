@@ -1,4 +1,4 @@
-INSIGHT 3D NG, VERSION 0.3.3
+INSIGHT 3D NG, VERSION 0.4.0
 ============================
 
 COMPILING ON MACOS
