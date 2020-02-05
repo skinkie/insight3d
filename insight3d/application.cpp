@@ -94,7 +94,7 @@ bool main_loop()
 
         // handle events in queue
         while (SDL_PollEvent(&event)) {
-            printf("event %d \n", event.type);
+            // printf("event %d \n", event.type);
             if (!gui_resolve_event(&event)) {
                 switch (event.type) {
                 case SDL_KEYDOWN: {
