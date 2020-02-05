@@ -548,7 +548,7 @@ bool geometry_loader_rz3(const char* xml_filename, Shots& shots)
 
         // save it
         printf("accessing shot %d\n", shot_id);
-        ASSERT_IS_SET(shots, shot_id);
+        ASSERT_IS_SET(shots, (unsigned long)shot_id);
         Shot* const shot = shots.data + shot_id;
         shot->T[0] = t[0];
         shot->T[1] = t[1];
@@ -751,7 +751,7 @@ bool geometry_loader_points(const char* pictures_filename, const char* tracks_fi
             const size_t vertex_id = vertices_offset + track_id;
             if (t++ % 10000 == 0) {
                 // debug
-                printf("vertices: accessing %d, count %d, allocated %d\n", vertex_id, vertices.count, vertices.allocated);
+                printf("vertices: accessing %lu, count %lu, allocated %lu\n", vertex_id, vertices.count, vertices.allocated);
             }
             DYN(vertices, vertex_id);
             vertices.data[vertex_id].group = group;

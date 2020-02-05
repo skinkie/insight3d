@@ -53,7 +53,7 @@
 #define LAST(variable_name) ((variable_name).data[((variable_name).count) - 1])
 #define LAST_INDEX(variable_name) (((variable_name).count) - 1)
 #define IS_SET(variable_name, index) (((index) < (variable_name).count) && (index >= 0) && ((variable_name).data[(index)].set))
-#define ASSERT_IS_SET(variable_name, index) (IS_SET((variable_name), (index)) ? 0 : (printf("%s, %d: accessing undefined index %d in dynamic array", __FILE__, __LINE__, (index)), core_abort()))
+#define ASSERT_IS_SET(variable_name, index) (IS_SET((variable_name), (index)) ? 0 : (printf("%s, %d: accessing undefined index %lu in dynamic array", __FILE__, __LINE__, (index)), core_abort()))
 #define ALL(variable_name, iterator) (size_t(iterator) = 0; (iterator) < (variable_name).count; ++(iterator)) if ((variable_name).data[(iterator)].set)
 #define LAMBDA_FROM(variable_name, from, iterator, function)                    \
     for ((iterator) = (from); (iterator) < (variable_name).count; ++(iterator)) \

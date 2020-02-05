@@ -672,7 +672,7 @@ bool mvg_autocalibration_2(CvMat** Ps, double* principal_points, const size_t n,
         for (size_t i = 0; i < n; i++) {
             printf(inliers_marked[i] ? "T" : "F");
         }
-        printf(" %d ", inliers_count);
+        printf(" %lu ", inliers_count);
         printf("\n");
 
         // set the best result
