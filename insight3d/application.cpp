@@ -75,25 +75,20 @@ bool main_loop()
 extern "C" struct ag_objectq agTimeoutObjQ;
 bool main_loop()
 {
-    bool is_active = true;
     Uint32 timestamp1 = SDL_GetTicks(), timestamp2 = 0;
 
     while (core_state.running) {
         timestamp2 = SDL_GetTicks();
         delta_time = timestamp2 - timestamp1;
 
-        // if the window is active, do some stuff
-        if (is_active) {
-            // redraw scene
-            gui_calculate_coordinates();
-            gui_render();
+        // redraw scene
+        gui_calculate_coordinates();
+        gui_render();
 
-            // let opencv do some redrawing
-            cvWaitKey(1);
+        // let opencv do some redrawing
+        cvWaitKey(1);
 
-            // switch SDL buffers
-            SDL_GL_SwapWindow(gui_context.sdl_window);
-        }
+        SDL_RenderPresent(gui_context.renderer);
 
         SDL_Event event;
 
@@ -114,14 +109,6 @@ bool main_loop()
 
                 case SDL_WINDOWEVENT: {
                     if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                        // resize the screen
-                        /*if (!(gui_context.sdl_window = SDL_CreateWindow("TBD", SDL_WINDOWPOS_UNDEFINED, 
-							SDL_WINDOWPOS_UNDEFINED, event.window.data1, event.window.data2, gui_context.video_flags)))
-						{
-							fprintf(stderr, "[SDL] Could not get a surface after resize: %s\n", SDL_GetError());
-							core_state.running = false;
-							break;
-						}*/
                         printf("window resized %d %d\n", event.window.data1, event.window.data2);
                         gui_helper_initialize_opengl();
                         gui_helper_opengl_adjust_size(event.window.data1, event.window.data2);

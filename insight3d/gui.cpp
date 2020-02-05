@@ -73,54 +73,37 @@ bool gui_helper_initialize_sdl(const int width, const int height)
         fprintf(stderr, "[GUI] Video initialization failed: %s\n", SDL_GetError());
         return false;
     }
+
 #ifdef LINUX
     gtk_init(NULL, NULL);
 #endif
-    //Use OpenGL 2.1
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-    // fetch the video info
-    /*if (!(gui_context.video_info = SDL_GetVideoInfo()))
-		fprintf(stderr, "[GUI] Video query failed: %s\n", SDL_GetError());
-		return false;
-	}*/
 
     // set the flags
-    gui_context.video_flags = SDL_WINDOW_OPENGL; // enable opengl
-    gui_context.video_flags |= SDL_GL_DOUBLEBUFFER; // double buffering prevents flickering
-    //gui_context.video_flags |= SDL_WINDOW_HWPALETTE;       // store palette in hardware
-    gui_context.video_flags |= SDL_WINDOW_RESIZABLE; // enable resizing
+    Uint32 video_flags = SDL_WINDOW_OPENGL;
+    video_flags |= SDL_WINDOW_RESIZABLE;
+    video_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 
-    // check if surfaces can be stored in hardware
-    if (gui_context.video_info) //->hw_available)
-    {
-        //gui_context.video_flags |= SDL_HWSURFACE;
-    } else {
-        gui_context.video_flags |= SDL_SWSURFACE;
-    }
+    gui_context.window = SDL_CreateWindow("Insight3D",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        width, height,
+        video_flags);
 
-    // check if hardware blits can be done
-    if (gui_context.video_info->blit_hw) {
-        //gui_context.video_flags |= SDL_HWACCEL;
-    }
-
-    // turn on opengl double buffering
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-    gui_context.sdl_window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED, width, height, gui_context.video_flags);
-    if (gui_context.sdl_window == NULL) {
-        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+    if (gui_context.window == NULL) {
+        fprintf(stderr, "[GUI] Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
-    SDL_GL_CreateContext(gui_context.sdl_window);
-    // get sdl surface to draw on
-    gui_context.surface = SDL_GetWindowSurface(gui_context.sdl_window);
-    if (!gui_context.surface) {
-        fprintf(stderr, "[GUI] Video mode set failed: %s\n", SDL_GetError());
+
+    // set up renderer
+    gui_context.renderer = SDL_CreateRenderer(gui_context.window, -1, 0);
+
+    if (gui_context.renderer == NULL) {
+        fprintf(stderr, "[GUI] Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
+
+    SDL_RenderSetLogicalSize(gui_context.renderer, width, height);
+
+    printf("[GUI] OpenGL version: %s\n", glGetString(GL_VERSION));
 
     return true;
 }
@@ -184,10 +167,6 @@ void gui_set_size(const int width, const int height)
     // save new size in the global structure
     gui_context.width = width;
     gui_context.height = height;
-
-    // adjust pixel size constants
-    gui_context.px = 1 / (double)width;
-    gui_context.py = 1 / (double)height;
 
     // propagate it into root panel
     gui_context.root_panel.x1 = 0;
@@ -451,7 +430,7 @@ void gui_render()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glTranslatef(0.375 * gui_context.px, 0.375 * gui_context.py, 0.0);
+    //glTranslatef(0.375 * gui_context.px, 0.375 * gui_context.py, 0.0);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -747,7 +726,7 @@ void gui_opengl_display_text(
 
 void gui_opengl_vertex(double x, double y)
 {
-    glVertex3f((float)(-1 + 2 * x * gui_context.px), (float)(1 - 2 * y * gui_context.py), 0);
+    glVertex3f((float)(-1 + 2 * x), (float)(1 - 2 * y), 0);
 }
 
 /* Cleanup */
