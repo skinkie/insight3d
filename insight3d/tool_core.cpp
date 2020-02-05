@@ -57,6 +57,18 @@ void tool_menu_item_pressed(GUI_Panel* event)
 
     // take a look what this menu item should do
     switch (item->action_type) {
+    case TOOL_ACTION_NONE: {
+        // do nothing
+        break;
+    }
+    case TOOL_ACTION_SHOW: {
+        // do nothing
+        break;
+    }
+    case TOOL_ACTION_FILE_DIALOG: {
+        // do nothing
+        break;
+    }
     case TOOL_ACTION_FUNCTION_CALL: {
         item->function_call();
         break;

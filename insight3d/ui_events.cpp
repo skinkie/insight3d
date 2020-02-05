@@ -182,6 +182,9 @@ void ui_event_redraw()
         // todo probably some progress bar
 
         break;
+    case UI_MODE_UNSPECIFIED:
+        // do nothing
+        break;
     }
 
     // display visualizations common for all modes
@@ -447,6 +450,15 @@ void ui_event_update(const Uint32 delta_time)
         break;
     case UI_MODE_INSPECTION:
         ui_update_inspection(delta_time);
+        break;
+    case UI_MODE_OVERVIEW:
+        // do nothing
+        break;
+    case UI_MODE_CALCULATION:
+        // do nothing
+        break;
+    case UI_MODE_UNSPECIFIED:
+        // do nothing
         break;
     }
 }

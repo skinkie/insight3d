@@ -90,6 +90,9 @@ void ui_empty_selection_list()
 
                 // which type of item is this
                 switch (selected_item->item_type) {
+                case GEOMETRY_UNSPECIFIED:
+                    // do nothing
+                    break;
                 case GEOMETRY_POINT:
                     // mark point as not selected
                     ASSERT_IS_SET(shots, selected_item->shot_id);
@@ -100,6 +103,9 @@ void ui_empty_selection_list()
                     // mark vertex as not selected
                     ASSERT_IS_SET(vertices, selected_item->item_id);
                     vertices.data[selected_item->item_id].selected = false;
+                    break;
+                case GEOMETRY_SHOT:
+                    // do nothing
                     break;
                 }
             }
@@ -414,6 +420,9 @@ void ui_3d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                                 if (vertex->selected) {
                                     ui_add_vertex_to_selection(i);
                                 }
+                            case SELECTION_TYPE_REMOVE:
+                                // do nothing
+                                break;
                             }
                         } else if (operation == SELECTION_TYPE_INTERSECTION) {
                             // finally remove the 'selected flag' when selecting subset of previous selection
@@ -503,6 +512,9 @@ void ui_2d_selection_box(double x1, double y1, double x2, double y2, Selection_T
                                     point->selected = false; // just to keep application invariant intact
                                     ui_add_point_to_selection(ui_state.current_shot, i);
                                 }
+                            case SELECTION_TYPE_REMOVE:
+                                // do nothing
+                                break;
                             }
                         } else if (operation == SELECTION_TYPE_INTERSECTION) {
                             // finally remove the 'selected flag' when selecting subset of previous selection
