@@ -580,6 +580,8 @@ bool geometry_loader_rz3(const char* xml_filename, Shots& shots)
 
     // data post processing
     geometry_process_data(shots);
+
+    return true;
 }
 
 // load 3d vertices from text file (one vertex per line: <x> <y> <z>); returns true on success // note previously we had vertex_id on the begining of the line
