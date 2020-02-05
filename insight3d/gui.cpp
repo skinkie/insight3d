@@ -31,7 +31,7 @@ GUI_Context gui_context;
 // value is inside interval
 static bool aux_inside_interval(int x, int a, int b)
 {
-    return x >= a && x <= b || x >= b && x <= a;
+    return (x >= a && x <= b) || (x >= b && x <= a);
 }
 
 // value is inside 2d interval
@@ -441,7 +441,7 @@ void gui_render()
 
         // skip invisible panels
         panel->effectively_hidden = true;
-        if (!gui_is_panel_visible(panel) || panel->parent && panel->parent->effectively_hidden)
+        if (!gui_is_panel_visible(panel) || (panel->parent && panel->parent->effectively_hidden))
             continue;
         panel->effectively_hidden = false;
 

@@ -1,6 +1,8 @@
 #include "cv_extensions.h"
 #define CV_VERYSMALLDOUBLE 1.0e-10
 
+#include <opencv2/core/core_c.h>
+
 void cvComputeRQDecomposition(CvMat* matrixM, CvMat* matrixR, CvMat* matrixQ, CvMat* matrixQx, CvMat* matrixQy, CvMat* matrixQz, CvPoint3D64f* eulerAngles)
 {
 
@@ -179,11 +181,11 @@ void cvComputeRQDecomposition(CvMat* matrixM, CvMat* matrixR, CvMat* matrixQ, Cv
     cvCopy(tmpMatrixR, matrixR);
     cvCopy(tmpMatrixQ, matrixQ);
 
-    if (matrixQx && CV_IS_MAT(matrixQx) && matrixQx->cols == 3 || matrixQx->rows == 3)
+    if ((matrixQx && CV_IS_MAT(matrixQx) && matrixQx->cols == 3) || matrixQx->rows == 3)
         cvCopy(tmpMatrixQx, matrixQx);
-    if (matrixQy && CV_IS_MAT(matrixQy) && matrixQy->cols == 3 || matrixQy->rows == 3)
+    if ((matrixQy && CV_IS_MAT(matrixQy) && matrixQy->cols == 3) || matrixQy->rows == 3)
         cvCopy(tmpMatrixQy, matrixQy);
-    if (matrixQz && CV_IS_MAT(matrixQz) && matrixQz->cols == 3 || matrixQz->rows == 3)
+    if ((matrixQz && CV_IS_MAT(matrixQz) && matrixQz->cols == 3) || matrixQz->rows == 3)
         cvCopy(tmpMatrixQz, matrixQz);
 
     /* Save Euler angles. */

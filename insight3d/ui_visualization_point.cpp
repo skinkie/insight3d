@@ -223,7 +223,7 @@ void visualization_shot_points()
 
                 // fetch point data and skip selected and focused
                 const Point* point = shot->points.data + i;
-                if (INDEX_IS_SET(ui_state.focused_point) && ui_state.focused_point == i || point->selected)
+                if ((INDEX_IS_SET(ui_state.focused_point) && ui_state.focused_point == i) || point->selected)
                     continue;
 
                 // check if this is outlier
@@ -242,7 +242,7 @@ void visualization_shot_points()
             {
                 // fetch point data and skip unselected or focused
                 const Point* point = shot->points.data + i;
-                if (!point->selected || INDEX_IS_SET(ui_state.focused_point) && ui_state.focused_point == i)
+                if (!point->selected || (INDEX_IS_SET(ui_state.focused_point) && ui_state.focused_point == i))
                     continue;
 
                 // skipping automatic points if the user wishes so

@@ -165,5 +165,5 @@ bool interface_filesystem_is_relative(const char* filename)
 {
     if (!filename)
         return true; // note really necessary
-    return !(filename[0] == '/' || strlen(filename) > 1 && filename[1] == ':');
+    return !(filename[0] == '/' || (strlen(filename) > 1 && filename[1] == ':'));
 }

@@ -231,7 +231,7 @@ void opencv_debug(const char* title, CvMat* A)
 // downsize image
 void opencv_downsize(IplImage** img, const int max_size)
 {
-    if (max_size <= 0 || (*img)->width <= max_size && (*img)->height <= max_size) {
+    if (max_size <= 0 || ((*img)->width <= max_size && (*img)->height <= max_size)) {
         return;
     }
 
@@ -409,7 +409,7 @@ bool opencv_pip(const double x, const double y, const CvMat* polygon)
 
     for (i = 0; i < polygon->cols; i++) {
         if (
-            OPENCV_ELEM(polygon, 1, i) < y && OPENCV_ELEM(polygon, 1, j) >= y || OPENCV_ELEM(polygon, 1, j) < y && OPENCV_ELEM(polygon, 1, i) >= y) {
+            (OPENCV_ELEM(polygon, 1, i) < y && OPENCV_ELEM(polygon, 1, j) >= y) || (OPENCV_ELEM(polygon, 1, j) < y && OPENCV_ELEM(polygon, 1, i) >= y)) {
             if (
                 OPENCV_ELEM(polygon, 0, i) + (y - OPENCV_ELEM(polygon, 1, i)) / (OPENCV_ELEM(polygon, 1, j) - OPENCV_ELEM(polygon, 1, i)) * (OPENCV_ELEM(polygon, 0, j) - OPENCV_ELEM(polygon, 0, i))
                 < x) {

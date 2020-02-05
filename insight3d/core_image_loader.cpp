@@ -125,7 +125,7 @@ void image_loader_resolve_request(const size_t request_id)
     Image_Loader_Shot* const shot = image_loader_shots.data + request->shot_id;
 
     // there must be something to do
-    if (request->quality == request->current_quality || request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION) {
+    if (request->quality == request->current_quality || (request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION)) {
         ASSERT(request->done, "request is apparently done, but not flagged as such");
         return;
     }
@@ -527,7 +527,7 @@ void* image_loader_thread_function(void* arg)
                                 // if the request is for shot we've just loaded, resolve the request
                                 if (
                                     request->shot_id == best_shot
-                                    && !(request->quality == request->current_quality || request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION)) {
+                                    && !(request->quality == request->current_quality || (request->quality == IMAGE_LOADER_CONTINUOUS_LOADING && request->current_quality == IMAGE_LOADER_FULL_RESOLUTION))) {
                                     image_loader_resolve_request(i);
 
                                     /*// if we are interested in low version 
