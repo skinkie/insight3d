@@ -10,7 +10,7 @@ Compiling on macOS requires [Homebrew](https://brew.sh)
 brew install opencv@2 freetype sdl libxml2 lapack gtk+
 
 # the following three dependencies are not available in homebrew-core:
-brew tap mikkelee/mikkelee
+brew tap mikkelee/tap
 brew install ann opensift sba
 
 mkdir build; cd build
