@@ -7,7 +7,7 @@ COMPILING ON MACOS
 Compiling on macOS requires [Homebrew](https://brew.sh)
 
 ```terminal
-brew install opencv@2 freetype sdl libxml2 lapack gtk+
+brew install opencv@2 freetype sdl libxml2 lapack gtk+3
 
 # the following three dependencies are not available in homebrew-core:
 brew tap mikkelee/tap
