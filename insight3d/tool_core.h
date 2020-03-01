@@ -31,12 +31,7 @@
 #include "portability.h"
 #include "ui_state.h"
 
-#ifdef LINUX
 #include <gtk/gtk.h>
-#else
-#include "Commdlg.h"
-#include "windows.h"
-#endif
 
 // tool event handlers
 typedef bool (*Tool_Process_Events)();
@@ -255,8 +250,14 @@ char* tool_choose_new_file();
 
 /* Progressbar */
 
+struct ProgressContext {
+    GtkWidget *window;
+    GtkWidget *bar;
+};
+extern ProgressContext progress_context;
+
 void tool_start_progressbar();
 void tool_end_progressbar();
-void tool_show_progress(double percentage);
+void tool_show_progress(int step, int total);
 
 #endif

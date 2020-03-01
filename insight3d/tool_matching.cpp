@@ -251,7 +251,7 @@ void matching_extract_features(const double max_size)
                 }
 
                 // update progressbar
-                tool_show_progress((shot_no - 1) * (1.0 / shots_count));
+                tool_show_progress(shot_no, shots_count);
 
                 // load the picture
                 IplImage* img = opencv_load_image(shot->image_filename, (int)max_size);
@@ -356,7 +356,7 @@ void matching_extract_tracks(const double fsor_limit, const bool use_ransac, con
                     {
                         jth++;
                         image_pair_no++;
-                        tool_show_progress((image_pair_no - 1) * (1.0 / image_pairs_count));
+                        tool_show_progress(image_pair_no, image_pairs_count);
                         // printf("%f(%d, %d) ", (image_pair_no - 1) / (1.0 / image_pairs_count), image_pair_no, image_pairs_count);
 
                         if (topology == MATCHING_TOPOLOGY_SEQUENCE && abs(ith - jth) > neighbours)

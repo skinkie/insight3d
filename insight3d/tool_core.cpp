@@ -661,7 +661,7 @@ char* tool_choose_new_file()
     char* filename = NULL;
 
     GtkFileChooserNative* dialog = gtk_file_chooser_native_new(
-        "Open File",
+        "Save File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_SAVE,
         "_Save",
@@ -695,36 +695,45 @@ char* tool_choose_new_file()
 
 /* Progressbar */
 
+ProgressContext progress_context;
+
 void tool_start_progressbar()
 {
-    cvNamedWindow("progressbar");
-    IplImage* img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3);
-    cvZero(img);
-    cvShowImage("progressbar", img);
-    cvWaitKey(10);
-    cvReleaseImage(&img);
+    progress_context.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title (GTK_WINDOW (progress_context.window), "Progress");
+    gtk_window_set_decorated (GTK_WINDOW (progress_context.window), FALSE);
+    gtk_window_set_default_size (GTK_WINDOW (progress_context.window), 220, 20);
+    gtk_window_set_keep_above(GTK_WINDOW(progress_context.window), TRUE);
+    gtk_window_set_modal(GTK_WINDOW(progress_context.window), TRUE);
+    gtk_window_set_position(GTK_WINDOW(progress_context.window), GTK_WIN_POS_CENTER);
+    gtk_window_set_resizable (GTK_WINDOW(progress_context.window), FALSE);
+    gtk_window_set_type_hint(GTK_WINDOW(progress_context.window), GDK_WINDOW_TYPE_HINT_DIALOG);
+    progress_context.bar = gtk_progress_bar_new();
+    gtk_container_add (GTK_CONTAINER (progress_context.window), progress_context.bar);
+    gtk_window_present (GTK_WINDOW(progress_context.window));
 }
 
 void tool_end_progressbar()
 {
-    // cvDestroyWindow("progressbar");
-    cvDestroyAllWindows();
-    cvWaitKey(1);
+    gtk_widget_destroy(progress_context.bar);
+    gtk_widget_destroy(progress_context.window);
 }
 
-void tool_show_progress(double percentage)
+void tool_show_progress(int step, int total)
 {
-    if (percentage < 0)
-        percentage = 0;
-    if (percentage > 1)
-        percentage = 1;
+    double fraction = step/total;
+    
+    if (fraction < 0.0)
+        fraction = 0.0;
+    if (fraction > 1.0)
+        fraction = 1.0;
 
-    IplImage* img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3);
-    cvZero(img);
-    for (int i = 0; i < 30; i++) {
-        cvLine(img, cvPoint(0, i), cvPoint(199 * percentage, i), cvScalar(255, 160, 160));
-    }
-    cvShowImage("progressbar", img);
-    cvWaitKey(10);
-    cvReleaseImage(&img);
+    gchar buf[32];
+    const gchar *format = "%d / %d";
+    g_snprintf(buf, sizeof(buf), format, step, total);
+    
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress_context.bar), buf);
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_context.bar), fraction);
+
+    gtk_widget_show_all (progress_context.window);
 }
