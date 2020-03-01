@@ -1033,12 +1033,11 @@ bool calibration_auto(
         int step = 0;
 
         while (calibration_auto_step(randomness, normalize_data, normalize_A, distance_threshold)) {
-            step++;
-            tool_show_progress((step % 10) * 0.1);
+            tool_show_progress(++step, 10);
         }
 
         const bool result = calibration_auto_end(randomness, normalize_data, normalize_A, distance_threshold);
-        tool_show_progress((++step % 10) * 0.1);
+        tool_show_progress(++step, 10);
         tool_end_progressbar();
 
         return true;

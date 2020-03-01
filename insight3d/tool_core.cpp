@@ -24,6 +24,9 @@
 
 #include "tool_core.h"
 
+#include <gtk/gtk.h>
+#include "SDL.h"
+
 Tools_State tools_state;
 
 DYNAMIC_STRUCTURE(Tool_Menu_Items, Tool_Menu_Item);
@@ -661,7 +664,7 @@ char* tool_choose_new_file()
     char* filename = NULL;
 
     GtkFileChooserNative* dialog = gtk_file_chooser_native_new(
-        "Open File",
+        "Save File",
         NULL,
         GTK_FILE_CHOOSER_ACTION_SAVE,
         "_Save",
@@ -695,36 +698,42 @@ char* tool_choose_new_file()
 
 /* Progressbar */
 
+ProgressContext progress_context;
+
 void tool_start_progressbar()
 {
-    cvNamedWindow("progressbar");
-    IplImage* img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3);
-    cvZero(img);
-    cvShowImage("progressbar", img);
-    cvWaitKey(10);
-    cvReleaseImage(&img);
+    progress_context.window = SDL_CreateWindow("Progress", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 100, 20, 0);
+    SDL_Surface *surface = SDL_GetWindowSurface((SDL_Window *)progress_context.window);
+    Uint32 black = SDL_MapRGB(surface->format, 0, 0, 0);
+    SDL_FillRect(surface, NULL, black);
+    SDL_UpdateWindowSurface((SDL_Window *)progress_context.window);
 }
 
 void tool_end_progressbar()
 {
-    // cvDestroyWindow("progressbar");
-    cvDestroyAllWindows();
-    cvWaitKey(1);
+    SDL_DestroyWindow((SDL_Window *)progress_context.window);
 }
 
-void tool_show_progress(double percentage)
+void tool_show_progress(int step, int total)
 {
-    if (percentage < 0)
-        percentage = 0;
-    if (percentage > 1)
-        percentage = 1;
+    double fraction = ((double)step)/((double)total);
+    
+    if (fraction < 0.0)
+        fraction = 0.0;
+    if (fraction > 1.0)
+        fraction = 1.0;
 
-    IplImage* img = cvCreateImage(cvSize(200, 30), IPL_DEPTH_8U, 3);
-    cvZero(img);
-    for (int i = 0; i < 30; i++) {
-        cvLine(img, cvPoint(0, i), cvPoint(199 * percentage, i), cvScalar(255, 160, 160));
-    }
-    cvShowImage("progressbar", img);
-    cvWaitKey(10);
-    cvReleaseImage(&img);
+    SDL_Surface *surface = SDL_GetWindowSurface((SDL_Window *)progress_context.window);
+    
+    SDL_Rect bar;
+    bar.x = 0;
+    bar.y = 0;
+    bar.w = 100*fraction;
+    bar.h = 20;
+    
+    Uint32 color = SDL_MapRGB(surface->format, 87, 255, 87);
+
+    SDL_FillRect(surface, &bar, color);
+    SDL_UpdateWindowSurface((SDL_Window *)progress_context.window);
+    SDL_PollEvent(NULL); // FIXME: this is EXTREMELY hacky
 }

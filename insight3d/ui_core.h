@@ -32,9 +32,7 @@
 #include "ui_events.h"
 #include "ui_state.h"
 
-#ifdef LINUX
 #include <gtk/gtk.h>
-#endif
 
 // ui core needs to see all tools to trigger their initialization
 #include "tool_calibration.h"
