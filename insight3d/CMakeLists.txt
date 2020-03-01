@@ -7,7 +7,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGTK_DISABLE_SINGLE_INCLUDES")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGSEAL_ENABLE")
 
-find_package(OpenCV 2.4 REQUIRED PATHS /usr/local/opt/opencv@2/share/OpenCV)
+find_package(OpenCV 3.4.9 REQUIRED PATHS /usr/local/Cellar/opencv@3/*/share/OpenCV)
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(Freetype REQUIRED)

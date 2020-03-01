@@ -7,7 +7,7 @@ COMPILING ON MACOS
 Compiling on macOS requires [Homebrew](https://brew.sh)
 
 ```terminal
-brew install opencv@2 freetype sdl2 libxml2 lapack gtk+3
+brew install opencv@3 freetype sdl2 libxml2 lapack gtk+3
 
 # the following three dependencies are not available in homebrew-core:
 brew tap mikkelee/tap
@@ -23,7 +23,7 @@ COMPILING ON LINUX
 
 To compile insight3dng under Linux, you must have the following libraries: 
 
-	- opencv2
+	- opencv3
 	- opengl
 	- SDL2
 	- libxml2 (to parse xml files)
