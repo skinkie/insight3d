@@ -24,6 +24,9 @@
 
 #include "tool_core.h"
 
+#include <gtk/gtk.h>
+#include "SDL.h"
+
 Tools_State tools_state;
 
 DYNAMIC_STRUCTURE(Tool_Menu_Items, Tool_Menu_Item);
@@ -699,41 +702,38 @@ ProgressContext progress_context;
 
 void tool_start_progressbar()
 {
-    progress_context.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title (GTK_WINDOW (progress_context.window), "Progress");
-    gtk_window_set_decorated (GTK_WINDOW (progress_context.window), FALSE);
-    gtk_window_set_default_size (GTK_WINDOW (progress_context.window), 220, 20);
-    gtk_window_set_keep_above(GTK_WINDOW(progress_context.window), TRUE);
-    gtk_window_set_modal(GTK_WINDOW(progress_context.window), TRUE);
-    gtk_window_set_position(GTK_WINDOW(progress_context.window), GTK_WIN_POS_CENTER);
-    gtk_window_set_resizable (GTK_WINDOW(progress_context.window), FALSE);
-    gtk_window_set_type_hint(GTK_WINDOW(progress_context.window), GDK_WINDOW_TYPE_HINT_DIALOG);
-    progress_context.bar = gtk_progress_bar_new();
-    gtk_container_add (GTK_CONTAINER (progress_context.window), progress_context.bar);
-    gtk_window_present (GTK_WINDOW(progress_context.window));
+    progress_context.window = SDL_CreateWindow("Progress", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 100, 20, 0);
+    SDL_Surface *surface = SDL_GetWindowSurface((SDL_Window *)progress_context.window);
+    Uint32 black = SDL_MapRGB(surface->format, 0, 0, 0);
+    SDL_FillRect(surface, NULL, black);
+    SDL_UpdateWindowSurface((SDL_Window *)progress_context.window);
 }
 
 void tool_end_progressbar()
 {
-    gtk_widget_destroy(progress_context.bar);
-    gtk_widget_destroy(progress_context.window);
+    SDL_DestroyWindow((SDL_Window *)progress_context.window);
 }
 
 void tool_show_progress(int step, int total)
 {
-    double fraction = step/total;
+    double fraction = ((double)step)/((double)total);
     
     if (fraction < 0.0)
         fraction = 0.0;
     if (fraction > 1.0)
         fraction = 1.0;
 
-    gchar buf[32];
-    const gchar *format = "%d / %d";
-    g_snprintf(buf, sizeof(buf), format, step, total);
+    SDL_Surface *surface = SDL_GetWindowSurface((SDL_Window *)progress_context.window);
     
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress_context.bar), buf);
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_context.bar), fraction);
+    SDL_Rect bar;
+    bar.x = 0;
+    bar.y = 0;
+    bar.w = 100*fraction;
+    bar.h = 20;
+    
+    Uint32 color = SDL_MapRGB(surface->format, 87, 255, 87);
 
-    gtk_widget_show_all (progress_context.window);
+    SDL_FillRect(surface, &bar, color);
+    SDL_UpdateWindowSurface((SDL_Window *)progress_context.window);
+    SDL_PollEvent(NULL); // FIXME: this is EXTREMELY hacky
 }

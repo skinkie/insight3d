@@ -31,8 +31,6 @@
 #include "portability.h"
 #include "ui_state.h"
 
-#include <gtk/gtk.h>
-
 // tool event handlers
 typedef bool (*Tool_Process_Events)();
 typedef void (*Tool_Begin_Event_Handler)();
@@ -251,8 +249,8 @@ char* tool_choose_new_file();
 /* Progressbar */
 
 struct ProgressContext {
-    GtkWidget *window;
-    GtkWidget *bar;
+    void *window;
+    void *bar;
 };
 extern ProgressContext progress_context;
 
