@@ -85,10 +85,7 @@ bool main_loop()
         gui_calculate_coordinates();
         gui_render();
 
-        // let opencv do some redrawing
-        cvWaitKey(1);
-
-        SDL_RenderPresent(gui_context.renderer);
+        SDL_GL_SwapWindow(gui_context.window);
 
         SDL_Event event;
 

@@ -105,6 +105,7 @@ struct GUI_Panel {
 struct GUI_Context {
     SDL_Window* window;
     SDL_Renderer* renderer;
+    SDL_GLContext glcontext;
 
     int width, height;
 

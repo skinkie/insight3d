@@ -68,6 +68,9 @@ bool gui_helper_initialize(const int width, const int height)
 // initialize SDL
 bool gui_helper_initialize_sdl(const int width, const int height)
 {
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6); // newest on macOS
+
     // initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "[GUI] Video initialization failed: %s\n", SDL_GetError());
@@ -77,7 +80,7 @@ bool gui_helper_initialize_sdl(const int width, const int height)
     // set the flags
     Uint32 video_flags = SDL_WINDOW_OPENGL;
     video_flags |= SDL_WINDOW_RESIZABLE;
-    video_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+    //video_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 
     gui_context.window = SDL_CreateWindow("Insight3D",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -97,9 +100,9 @@ bool gui_helper_initialize_sdl(const int width, const int height)
         return false;
     }
 
-    SDL_RenderSetLogicalSize(gui_context.renderer, width, height);
+    SDL_RenderClear(gui_context.renderer); // init backend
 
-    printf("[GUI] OpenGL version: %s\n", glGetString(GL_VERSION));
+    SDL_RenderSetLogicalSize(gui_context.renderer, width, height);
 
     return true;
 }
@@ -107,6 +110,15 @@ bool gui_helper_initialize_sdl(const int width, const int height)
 // initialize OpenGL
 bool gui_helper_initialize_opengl()
 {
+    gui_context.glcontext = SDL_GL_CreateContext(gui_context.window);
+
+    if (gui_context.glcontext == NULL) {
+        fprintf(stderr, "[GUI] GLContext could not be created! SDL_Error: %s\n", SDL_GetError());
+        return false;
+    }
+
+    printf("[GUI] OpenGL version: %s\n", glGetString(GL_VERSION));
+
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
     glClearColor(0.0, 0.0, 0.0, 0.5);
@@ -435,6 +447,8 @@ void gui_render()
     for (size_t i = 0; i < gui_context.panels_count; i++) {
         GUI_Panel* const panel = gui_context.panels[i];
 
+        //printf("[GUI] panel %lu %s\n", i, panel->debugging_title);
+        
         // skip invisible panels
         panel->effectively_hidden = true;
         if (!gui_is_panel_visible(panel) || (panel->parent && panel->parent->effectively_hidden))
@@ -730,6 +744,8 @@ void gui_opengl_vertex(double x, double y)
 // cleanup the stuff allocated by gui_helper_initialize
 void gui_release()
 {
+    SDL_GL_DeleteContext(gui_context.glcontext);
+
     // TODO:
     // note we should release all caption_* data, textures, ...
     // meh
