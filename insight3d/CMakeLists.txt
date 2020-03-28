@@ -17,6 +17,7 @@ find_package(BLAS REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
 
 find_library(ANN_LIBRARY ann)
 find_library(OPENSIFT_LIBRARY opensift/libopensift.a)
@@ -46,6 +47,7 @@ include_directories(
 	${LAPACK_INCLUDE_DIRS}
 	${BLAS_INCLUDE_DIRS}
 	${GTK3_INCLUDE_DIRS}
+	${GTHREAD_INCLUDE_DIRS}
 	${ANN_INCLUDE}
 	${OPENSIFT_INCLUDE}
 	${SBA_INCLUDE}
@@ -53,10 +55,12 @@ include_directories(
 
 link_directories(
 	${GTK3_LIBRARY_DIRS}
+	${GTHREAD_LIBRARY_DIRS}
 )
 
 add_definitions(
 	${GTK3_CFLAGS_OTHER}
+	${GTHREAD_CFLAGS_OTHER}
 )
 
 file(GLOB INSIGHT_SOURCES
@@ -85,6 +89,7 @@ target_link_libraries(Insight3D
 	${LAPACK_LIBRARIES}
 	${BLAS_LIBRARIES}
 	${GTK3_LIBRARIES}
+	${GTHREAD_LIBRARIES}
 	${ANN_LIBRARY}
 	${OPENSIFT_LIBRARY}
 	${SBA_LIBRARY}
