@@ -77,7 +77,7 @@ char* interface_filesystem_extract_filename(const char* filename)
     const size_t separator_pos = last_separator - filename;
     const size_t filename_len = len - separator_pos;
     char* extracted = /*(char *)malloc(sizeof(char) * (filename_len + 1));*/ ALLOC(char, filename_len + 1);
-    memcpy(extracted, last_separator + 1, sizeof(char) * (filename_len + 1));
+    memcpy(extracted, last_separator + 1, sizeof(char) * (filename_len + 1 - 1));
     extracted[filename_len] = '\0';
     return extracted;
 }
