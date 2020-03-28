@@ -11,6 +11,8 @@ Issues:
 #include "gui.h"
 #include "gui_style.h"
 
+#include <gtk/gtk.h>
+
 #define GUI_NEW(type) ((type*)malloc(sizeof(type)))
 #define GUI_NEW_ARRAY(type, n) ((type*)malloc(sizeof(type) * (n)))
 #define GUI_CLEAR(var, type) memset((var), 0, sizeof(type))
@@ -76,6 +78,9 @@ bool gui_helper_initialize_sdl(const int width, const int height)
         fprintf(stderr, "[GUI] Video initialization failed: %s\n", SDL_GetError());
         return false;
     }
+
+    // initialize GTK
+    gtk_init(NULL, NULL);
 
     // set the flags
     Uint32 video_flags = SDL_WINDOW_OPENGL;

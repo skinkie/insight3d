@@ -24,12 +24,8 @@
 
 #include "application.h"
 
-#include <gtk/gtk.h>
-
 int main(int argc, char* argv[])
 {
-    gtk_init(&argc, &argv);
-
     // start, do stuff and finish happily
     return initialization() && main_loop() && release() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
